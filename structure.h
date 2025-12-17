@@ -1,70 +1,61 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
-// --- 1. CONSTANTES (Faciles à changer ici) ---
+// --- Constantes ---
 
-// Taille de la grille. Le prof a dit par mail qu'on pouvait changer.
-// 25x45 c'est trop grand, on met 10x15 pour tester tranquillement.
+// Dimensions (10x15 pour tester, modifiable plus tard)
 #define LIGNES 10
 #define COLONNES 15
 
-// Nombre de types de bonbons de base (A, B, C, D, E)
+// Nombre de types de bonbons (sans compter les murs)
 #define NB_TYPES 5
 
-// Longueur max du pseudo du joueur (pour la sauvegarde)
+// Taille max du nom du joueur
 #define MAX_PSEUDO 50
 
-// --- 2. ENUMERATIONS (Les types d'objets) ---
+// --- Types d'objets ---
 
 typedef enum {
-    VIDE = 0,      // Case vide (quand ça explose)
-    
-    // Les items de base (Bonbons, Légumes...)
-    ITEM_1,
+    VIDE = 0,      // Case vide
+    ITEM_1,        // Les symboles (1 à 5)
     ITEM_2,
     ITEM_3,
     ITEM_4,
     ITEM_5,
-
-    // Extensions obligatoires (Page 9 du sujet)
-    MUR,           // Bloque la gravité
-    BONUS,         // Item spécial positif
-    MALUS          // Item spécial négatif (virus...)
+    MUR,           // Extension : Mur
+    BONUS,         // Extension : Bonus
+    MALUS          // Extension : Malus
 } TypeItem;
 
-// --- 3. STRUCTURES (Les briques de ton jeu) ---
+// --- Structures ---
 
-// Une case unique de la grille
+// Une case du plateau
 typedef struct {
-    TypeItem type;       // C'est quoi ? (Bonbon rouge, mur, vide...)
-    int estSelectionne;  // 1 si le joueur a cliqué dessus (surbrillance), 0 sinon
+    TypeItem type;       // Le type (1, 2, MUR...)
+    int estSelectionne;  // 1 si sélectionné, 0 sinon
 } Case;
 
-// Pour gérer le "Contrat" (Objectifs à atteindre pour gagner)
-// Exemple : "Détruire 20 fraises" -> typeCible = FRAISE, nbA_Detruire = 20
+// Les objectifs pour gagner le niveau (Ex: détruire 10 rouges)
 typedef struct {
-    int quantiteCible[NB_TYPES + 1]; // Combien il faut détruire de chaque type (index 1 à 5)
-    int quantiteActuelle[NB_TYPES + 1]; // Combien on en a déjà détruit
+    // Tableau : combien il faut détruire de chaque type
+    // index 1 = ITEM_1, index 2 = ITEM_2, etc.
+    int quantiteCible[NB_TYPES + 1]; 
+    
+    // Tableau : combien on en a déjà détruit
+    int quantiteActuelle[NB_TYPES + 1];
 } Contrat;
 
-// La structure principale qui contient TOUTE ta partie
+// La partie complète
 typedef struct {
-    // Le plateau de jeu
-    Case grille[LIGNES][COLONNES];
-
-    // Infos du joueur
-    char pseudo[MAX_PSEUDO]; // Pour charger/sauvegarder
-    int vies;                // Si 0, game over
+    Case grille[LIGNES][COLONNES]; // Le plateau
+    
+    char pseudo[MAX_PSEUDO]; // Nom du joueur (pour sauvegarder)
+    int vies;                // Vies restantes
     int score;               // Score actuel
-    
-    // Contraintes du niveau
+    int coupsRestants;       // Coups avant game over
     int numeroNiveau;        // Niveau 1, 2, 3...
-    int coupsRestants;       // Si 0, on perd une vie
-    int tempsRestant;        // En secondes (optionnel au début, mais demandé dans le sujet)
     
-    // L'objectif pour gagner ce niveau
-    Contrat contrat;
-
+    Contrat contrat;         // L'objectif à atteindre
 } Niveau;
 
 #endif
