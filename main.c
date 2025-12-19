@@ -5,7 +5,7 @@
 #include <math.h>    // Pour abs() (calcul de distance)
 
 // On inclut tous nos fichiers
-#include "structure.h"
+#include "structure.h" // Attention, vérifie si c'est structure.h ou structures.h (avec un s) dans ton dossier
 #include "jeu.h"
 #include "affichage.h"
 #include "sauvegarde.h"
@@ -20,7 +20,7 @@ void jouerNiveau(Niveau *monNiveau) {
     // On affiche le cadre statique une seule fois
     afficherCadre();
 
-    // Au lancement, on vérifie s'il y a déjà des alignements (pour nettoyer la grille de départ)
+    // Au lancement, on nettoie les combos existants
     gererCombos(monNiveau);
 
     // BOUCLE INFINIE
@@ -96,26 +96,25 @@ void jouerNiveau(Niveau *monNiveau) {
                             echangerCases(&monNiveau->grille[yPrecedent][xPrecedent], 
                                           &monNiveau->grille[curseurY][curseurX]);
                             
-                            // 2. On enlève la sélection tout de suite (pour que ce soit propre)
+                            // 2. On enlève la sélection tout de suite
                             monNiveau->grille[yPrecedent][xPrecedent].estSelectionne = 0;
                             monNiveau->grille[curseurY][curseurX].estSelectionne = 0;
 
                             // 3. LE TEST CRUCIAL : Est-ce que ça aligne 3 bonbons ?
                             if (detecterEtSupprimerAlignements(monNiveau)) {
                                 // OUI ! C'est un bon coup
-                                monNiveau->coupsRestants--; // On perd un coup
-                                faireTomberEtRemplir(monNiveau); // Gravité
-                                gererCombos(monNiveau); // Réaction en chaine
+                                monNiveau->coupsRestants--; 
+                                faireTomberEtRemplir(monNiveau); 
+                                gererCombos(monNiveau); 
                             } 
                             else {
-                                // NON ! Ça ne fait rien.
-                                // On annule l'échange (le bonbon revient à sa place)
+                                // NON ! Ça ne fait rien, on annule.
                                 echangerCases(&monNiveau->grille[yPrecedent][xPrecedent], 
                                               &monNiveau->grille[curseurY][curseurX]);
                             }
 
                         } else {
-                            // Trop loin : On oublie l'ancienne et on sélectionne la nouvelle
+                            // Trop loin : On sélectionne la nouvelle case
                             monNiveau->grille[yPrecedent][xPrecedent].estSelectionne = 0;
                             monNiveau->grille[curseurY][curseurX].estSelectionne = 1;
                         }
@@ -127,28 +126,34 @@ void jouerNiveau(Niveau *monNiveau) {
                 }
             }
 
-            // --- SAUVEGARDE (Touche S) ---
-            else if (codeTouche == 's' || codeTouche == 'S') {
-                if(sauvegarderPartie(monNiveau)) {
-                    gotoligcol(LIGNES+4, 2); 
-                    color(VERT, NOIR);
-                    printf(">> PARTIE SAUVEGARDEE ! <<");
-                    Sleep(1000); 
-                    gotoligcol(LIGNES+4, 2); 
-                    printf("                          ");
-                    color(BLANC, NOIR);
-                }
-            }
-
             // --- QUITTER (Touche X) ---
             else if (codeTouche == 'x' || codeTouche == 'X') {
-                jeuEnCours = 0; 
+                
+                // On efface le bas pour poser la question
+                gotoligcol(LIGNES+4, 2); 
+                color(JAUNE, NOIR);
+                printf("Voulez-vous sauvegarder avant de quitter ? (O/N) ");
+                
+                char reponse = _getch();
+                
+                if (reponse == 'o' || reponse == 'O') {
+                    if(sauvegarderPartie(monNiveau)) {
+                        gotoligcol(LIGNES+4, 2); 
+                        color(VERT, NOIR);
+                        printf(">> SAUVEGARDE REUSSIE ! A BIENTOT <<       ");
+                        Sleep(1500); 
+                    }
+                }
+                
+                jeuEnCours = 0; // On arrête la boucle
             }
-        }
+        } // Fin du if(_kbhit)
 
-        Sleep(10); 
-    }
-}
+        // Petite pause CPU (Important !)
+        Sleep(10);
+
+    } // Fin du while(jeuEnCours) <--- C'ETAIT ICI QU'IL MANQUAIT L'ACCOLADE
+} // Fin de la fonction jouerNiveau <--- ET ICI
 
 // --- PROGRAMME PRINCIPAL (MAIN) ---
 int main() {
@@ -165,17 +170,13 @@ int main() {
 
         switch (choixMenu) {
             case 1: // NOUVELLE PARTIE
-                // On prépare un nouveau niveau 1
                 initialiserNiveau(&monNiveau, 1);
                 
-                // On demande le pseudo (Joli écran noir)
                 system("cls");
                 gotoligcol(10, 30);
                 printf("Entrez votre pseudo : ");
-                // scanf un peu brute, mais ça fait le taf pour l'école
                 scanf("%s", monNiveau.pseudo); 
                 
-                // C'est parti !
                 jouerNiveau(&monNiveau);
                 break;
 
@@ -188,7 +189,6 @@ int main() {
                     Sleep(2000);
                     color(BLANC, NOIR);
                     
-                    // On lance le jeu avec les données chargées
                     jouerNiveau(&monNiveau);
                 } else {
                     gotoligcol(10, 30);
@@ -207,7 +207,7 @@ int main() {
                 break;
         }
 
-    } while (choixMenu != 3); // Tant qu'on ne choisit pas "Quitter"
+    } while (choixMenu != 3);
 
     return 0;
 }
