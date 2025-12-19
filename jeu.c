@@ -28,9 +28,24 @@ void initialiserNiveau(Niveau *niveau, int numNiveau) {
         niveau->contrat.quantiteActuelle[k] = 0;
     }
     
-    // Exemple : Pour le niveau 1, on veut tuer 10 items de type 1
+    // Contrats différents selon le niveau (difficulté croissante)
     if (numNiveau == 1) {
-        niveau->contrat.quantiteCible[ITEM_1] = 10; 
+        niveau->contrat.quantiteCible[ITEM_1] = 10;
+        niveau->coupsRestants = 30;
+        niveau->tempsTotalSec = 120; // 2 min
+    }
+    else if (numNiveau == 2) {
+        niveau->contrat.quantiteCible[ITEM_1] = 15;
+        niveau->contrat.quantiteCible[ITEM_2] = 15;
+        niveau->coupsRestants = 25;
+        niveau->tempsTotalSec = 90; // 1 min 30
+    }
+    else if (numNiveau == 3) {
+        niveau->contrat.quantiteCible[ITEM_1] = 20;
+        niveau->contrat.quantiteCible[ITEM_2] = 20;
+        niveau->contrat.quantiteCible[ITEM_3] = 10;
+        niveau->coupsRestants = 20;
+        niveau->tempsTotalSec = 60; // 1 min
     }
 
     // 4. Remplissage de la grille avec des items aléatoires
@@ -54,10 +69,10 @@ void echangerCases(Case *case1, Case *case2) {
     *case2 = temp;       // Restauration
 }
 
-// ============== ITEMS SPÉCIAUX ==============
+// ============== EFFETS SPÉCIAUX (Figures du CDC) ==============
 
-// ITEM 1 : Bombe - détruit zone 3x3 autour de (x,y) [EXTENSION]
-void itemBombe(Niveau *niveau, int x, int y) {
+// EFFET BOMBE : Détruit zone 3x3 autour de (x,y) [EXTENSION niveau 2+]
+void effetBombe(Niveau *niveau, int x, int y) {
     // On parcourt les cases autour (i, j)
     for (int i = x - 1; i <= x + 1; i++) {
         for (int j = y - 1; j <= y + 1; j++) {
@@ -70,8 +85,8 @@ void itemBombe(Niveau *niveau, int x, int y) {
     }
 }
 
-// ITEM 2 : Supprimer une ligne entière
-void itemLigne(Niveau *niveau, int ligne) {
+// EFFET LIGNE : Supprimer une ligne entière (Croix de 9 - CDC page 5)
+void effetLigne(Niveau *niveau, int ligne) {
     // Sécurité
     if (ligne < 0 || ligne >= LIGNES) return;
 
@@ -83,8 +98,8 @@ void itemLigne(Niveau *niveau, int ligne) {
     }
 }
 
-// ITEM 3 : Supprimer une colonne entière
-void itemColonne(Niveau *niveau, int colonne) {
+// EFFET COLONNE : Supprimer une colonne entière (Croix de 9 - CDC page 5)
+void effetColonne(Niveau *niveau, int colonne) {
     // Sécurité
     if (colonne < 0 || colonne >= COLONNES) return;
 
@@ -96,8 +111,8 @@ void itemColonne(Niveau *niveau, int colonne) {
     }
 }
 
-// ITEM 4 : Supprimer toutes les cases d'un type/couleur
-void itemCouleur(Niveau *niveau, int type) {
+// EFFET COULEUR : Supprimer toutes les cases d'un type (6 alignés - CDC page 5)
+void effetCouleur(Niveau *niveau, int type) {
     for (int i = 0; i < LIGNES; i++) {
         for (int j = 0; j < COLONNES; j++) {
             // On compare avec .type
@@ -109,8 +124,8 @@ void itemCouleur(Niveau *niveau, int type) {
     }
 }
 
-// ITEM 5 : Supprimer un carré 4x4 à partir de (x, y)
-void itemCarre4x4(Niveau *niveau, int x, int y) {
+// EFFET CARRE : Supprimer un carré 4x4 (Carré 4x4 - CDC page 5)
+void effetCarre4x4(Niveau *niveau, int x, int y) {
     for (int i = x; i < x + 4 && i < LIGNES; i++) {
         for (int j = y; j < y + 4 && j < COLONNES; j++) {
             if (niveau->grille[i][j].type != VIDE) {
@@ -133,7 +148,7 @@ void supprimerCase(Niveau *niveau, int i, int j) {
     if (type == VIDE) return;
 
     // 1. On met à jour le contrat (Objectifs)
-    if (type <= NB_TYPES) { // Si c'est un bonbon normal
+    if (type <= NB_TYPES) { // Si c'est un fruit normal
         niveau->contrat.quantiteActuelle[type]++;
     }
 
@@ -165,8 +180,8 @@ int detecterCroix(Niveau *niveau) {
             // Croix complète = haut + bas + gauche + droite
             if (haut && bas && gauche && droite) {
                 // Supprime toute la ligne et la colonne
-                itemLigne(niveau, i);
-                itemColonne(niveau, j);
+                effetLigne(niveau, i);
+                effetColonne(niveau, j);
                 modif = 1;
             }
         }
@@ -194,7 +209,7 @@ int detecterCarre4x4(Niveau *niveau) {
             }
             
             if (estCarre) {
-                itemCarre4x4(niveau, i, j);
+                effetCarre4x4(niveau, i, j);
                 modif = 1;
             }
         }
@@ -236,9 +251,13 @@ int detecterEtSupprimerAlignements(Niveau *niveau) {
                 
                 // 6 alignés → supprime toute la couleur (CDC page 5)
                 if (longueur >= 6) {
-                    itemCouleur(niveau, t);
+                    effetCouleur(niveau, t);
                 }
-                // 4 ou 5 alignés → supprime juste la suite (normal)
+                // 5 alignés + niveau 2+ → BOMBE (EXTENSION)
+                else if (longueur == 5 && niveau->numeroNiveau >= 2) {
+                    effetBombe(niveau, i, j + 2); // Centre de l'alignement
+                }
+                // 3 ou 4 alignés → supprime juste la suite (normal)
                 
                 modif = 1;
                 j += longueur - 1; // On saute les cases déjà traitées
@@ -266,9 +285,13 @@ int detecterEtSupprimerAlignements(Niveau *niveau) {
                 
                 // 6 alignés → supprime toute la couleur (CDC page 5)
                 if (longueur >= 6) {
-                    itemCouleur(niveau, t);
+                    effetCouleur(niveau, t);
                 }
-                // 4 ou 5 alignés → supprime juste la suite (normal)
+                // 5 alignés + niveau 2+ → BOMBE (EXTENSION)
+                else if (longueur == 5 && niveau->numeroNiveau >= 2) {
+                    effetBombe(niveau, i + 2, j); // Centre de l'alignement
+                }
+                // 3 ou 4 alignés → supprime juste la suite (normal)
                 
                 modif = 1;
                 i += longueur - 1; // On saute les cases déjà traitées
@@ -323,7 +346,7 @@ void gererCombos(Niveau *niveau) {
         
         if (combo) {
             // 2. Si on a supprimé, on fait tomber et on remplit
-            // Petite astuce visuelle : Si tu veux voir l'animation,
+            // Petite astuce visuelle : Si on veut voir l'animation,
             // il faudrait afficher et faire un Sleep ici, mais on fait simple.
             faireTomberEtRemplir(niveau);
         }
