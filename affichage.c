@@ -39,31 +39,28 @@ int tempsRestantSec(Niveau *niveau) {
 /* --- FONCTIONS PRINCIPALES --- */
 
 void afficherCadre(void) {
-    system("cls"); 
+    system("cls"); // On nettoie l'ecran
     color(BLANC, NOIR);
 
-    // LARGEUR ORIGINALE (Compacte)
-    // 55 caractères suffisent pour la grille de fruits
-    int largeur = 55; 
+    int largeurCadre = 60; // ON FORCE UNE LARGEUR FIXE (Suffisant pour les emojis)
 
     // --- Ligne du Haut ---
     gotoligcol(0, 0);
-    printf("+");
-    for (int i = 0; i < largeur; i++) printf("-");
-    printf("+");
+    printf("|");
+    for (int i = 0; i < largeurCadre; i++) printf("-");
+    printf("|");
 
-    // --- Murs Gauche et Droite ---
-    // On descend jusqu'à 25 pour encadrer le menu du bas
-    for (int i = 0; i < 25; i++) {
-        gotoligcol(i + 1, 0);           printf("|"); 
-        gotoligcol(i + 1, largeur + 1); printf("|"); 
+    // --- Bords GAUCHE et DROITE ---
+    for (int i = 0; i < LIGNES; i++) {
+        gotoligcol(i + 1, 0);              printf("|"); // Bord Gauche
+        gotoligcol(i + 1, largeurCadre+1); printf("|"); // Bord Droit (Fixe)
     }
 
     // --- Ligne du Bas ---
-    gotoligcol(26, 0); 
-    printf("+");
-    for (int i = 0; i < largeur; i++) printf("-");
-    printf("+");
+    gotoligcol(LIGNES + 1, 0);
+    printf("|");
+    for (int i = 0; i < largeurCadre; i++) printf("-");
+    printf("|");
 }
 
 void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
@@ -116,49 +113,38 @@ void effacerZone(int lig, int col){
 // -------------------------------------------------
 
 void afficherHUD(Niveau *niveau) {
-    // ON COLLE LE TEXTE JUSTE A DROITE DU CADRE
-    // Le cadre finit à 55, donc on écrit à 60
-    int x = 60; 
+    // ON FORCE LA POSITION X A 65 (Loin à droite)
+    int x = 65; 
     
-    int y = 2; 
+    int y = 2;
+    int w = 40; // Largeur pour effacer les vieilles lignes
     int t = tempsRestantSec(niveau);
 
-    // Fonction de nettoyage (à laisser ici ou sortir selon ton compilateur)
-    // Si tu as une erreur, mets cette fonction EN DEHORS de afficherHUD
-    void effacerZone(int lig, int col){
-        gotoligcol(lig, col);
-        printf("                        "); // Nettoyage court
-        gotoligcol(lig, col);
-    }
-    
     // --- Stats ---
-    effacerZone(y, x);
-    color(JAUNE, NOIR);
+    // A chaque fois, on efface la zone (clearLineAt) avant d'écrire
+    clearLineAt(y, x, w); gotoligcol(y, x);
     printf("NIVEAU %d", niveau->numeroNiveau);
 
-    effacerZone(y+2, x);
-    color(BLANC, NOIR);
+    clearLineAt(y+2, x, w); gotoligcol(y+2, x);
     printf("Vies: ");
     color(ROUGE, NOIR);
-    for(int i=0; i<niveau->vies; i++) printf("♥ "); 
+    for(int i=0; i<niveau->vies; i++) printf("♥ ");
     color(BLANC, NOIR);
 
-    effacerZone(y+4, x);
+    clearLineAt(y+4, x, w); gotoligcol(y+4, x);
     printf("Score: %d", niveau->score);
 
-    effacerZone(y+5, x);
+    clearLineAt(y+5, x, w); gotoligcol(y+5, x);
     printf("Coups: %d", niveau->coupsRestants);
 
-    effacerZone(y+7, x);
+    clearLineAt(y+7, x, w); gotoligcol(y+7, x);
     color((t<30)?ROUGE:BLANC, NOIR);
     printf("Temps: %02d:%02d", t/60, t%60);
     color(BLANC, NOIR);
 
     // --- Objectifs ---
-    effacerZone(y+9, x);
-    color(CYAN, NOIR);
+    clearLineAt(y+9, x, w); gotoligcol(y+9, x);
     printf("OBJECTIFS :");
-    color(BLANC, NOIR);
     
     int ligne = y + 10;
     for(int k=1; k<=NB_TYPES; k++) {
@@ -166,22 +152,21 @@ void afficherHUD(Niveau *niveau) {
             int fait = niveau->contrat.quantiteActuelle[k];
             int total = niveau->contrat.quantiteCible[k];
             
-            effacerZone(ligne, x);
+            clearLineAt(ligne, x, w); gotoligcol(ligne, x);
             
             if (fait >= total) color(VERT, NOIR);
             else color(BLANC, NOIR);
             
-            // CORRECTION ALIGNEMENT : on utilise %2d pour que les chiffres s'alignent
-            // Exemple : " 9 / 10" au lieu de "9 / 10" qui décale tout
-            printf("- Item %d : %2d / %2d", k, fait, total);
+            // On affiche juste "Item X" pour que ce soit court et propre
+            printf("- Item %d : %d/%d", k, fait, total);
             ligne++;
         }
     }
 
-    // --- Aide (En bas, centrée sous la grille) ---
+    // --- Aide (Tout en bas, alignée à gauche pour faire propre) ---
     color(GRIS, NOIR);
-    gotoligcol(24, 2); 
-    printf("[Fleches] Bouger | [ESPACE] Selection | [X] Quitter");
+    gotoligcol(LIGNES + 4, 2); 
+    printf("[Fleches] Bouger | [ESPACE] Selection | [S] Sauver | [X] Quitter");
     color(BLANC, NOIR);
 }
 
