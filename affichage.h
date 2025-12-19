@@ -8,7 +8,10 @@
 #define NB_COL 45
 #define NB_ITEMS 5
 
-// Codes Couleurs (Pour que tes collègues puissent aussi les utiliser si besoin)
+// Taille max du nom du joueur
+#define MAX_PSEUDO 50
+
+// Codes Couleurs (Pour les utiliser si besoin)
 #define NOIR 0
 #define BLEU 9
 #define VERT 10
@@ -18,15 +21,28 @@
 #define BLANC 15
 #define GRIS 8
 
+// --- Types d'objets ---
+typedef enum {
+    VIDE = 0,      // Case vide
+    ITEM_1,        // Les symboles (1 à 5)
+    ITEM_2,
+    ITEM_3,
+    ITEM_4,
+    ITEM_5,
+    MUR,           // Extension : Mur
+    BONUS,         // Extension : Bonus
+    MALUS          // Extension : Malus
+} TypeItem;
+
 // --- STRUCTURE PARTAGÉE ---
 // NOTE POUR L'EQUIPE : Cette structure définit les données que l'affichage doit lire.
-// Si une structure commune existe déjà (ex: jeu.h), il faudra déplacer ceci dedans.
 typedef struct {
     int grille[NB_LIG][NB_COL]; // Matrice du plateau
-    int vies;
-    int score;
-    int coupsRestants;
-    int niveauActuel;
+    
+    int vies;                // Vies restantes
+    int score;               // Score actuel
+    int coupsRestants;       // Coups avant game over
+    int niveauActuel;        // Niveau 1, 2, 3...
 
     // Gestion du temps
     int tempsTotalSec;
@@ -40,9 +56,12 @@ typedef struct {
     int cursorX;
     int cursorY;
     int isSelected; // 1 si le joueur a activé la sélection, 0 sinon
+
+    // Joueur (pour sauvegarder)
+    char pseudo[MAX_PSEUDO]; // Nom du joueur
 } GameState;
 
-// --- PROTOTYPES (TES FONCTIONS) ---
+// --- PROTOTYPES (LES FONCTIONS) ---
 
 // Outils techniques (Initialisation console)
 void initConsole(void);
