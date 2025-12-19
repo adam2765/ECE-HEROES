@@ -42,27 +42,27 @@ void afficherCadre(void) {
     system("cls"); // On nettoie tout
     color(BLANC, NOIR);
 
-    // ON FIXE LA LARGEUR A 110 (C'est grand, c'est fait exprès !)
-    int largeur = 110; 
+    // LARGEUR COMPACTE (90 est suffisant pour emojis + HUD)
+    int largeur = 90; 
+    int hauteurCadre = LIGNES + 4; // Juste assez haut pour le footer
 
     // --- Ligne du Haut ---
     gotoligcol(0, 0);
     printf("+");
     for (int i = 0; i < largeur; i++) printf("-");
-    printf("+");
+    printf("|");
 
     // --- Murs Gauche et Droite ---
-    // On descend jusqu'à la ligne 25 pour englober tout le HUD
-    for (int i = 0; i < 25; i++) {
-        gotoligcol(i + 1, 0);          printf("|"); // Mur Gauche
-        gotoligcol(i + 1, largeur + 1); printf("|"); // Mur Droit (Loin à droite)
+    for (int i = 0; i < hauteurCadre; i++) {
+        gotoligcol(i + 1, 0);           printf("|"); // Mur Gauche
+        gotoligcol(i + 1, largeur + 1); printf("|"); // Mur Droit
     }
 
     // --- Ligne du Bas ---
-    gotoligcol(26, 0); // On ferme en bas
+    gotoligcol(hauteurCadre + 1, 0); // On ferme en bas
     printf("+");
     for (int i = 0; i < largeur; i++) printf("-");
-    printf("+");
+    printf("|");
 }
 
 void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
@@ -115,11 +115,20 @@ void effacerZone(int lig, int col){
 // -------------------------------------------------
 
 void afficherHUD(Niveau *niveau) {
-    // ZONE DE SECURITE : On écrit à la colonne 75
-    int x = 75; 
+    // POSITION X COMPACTE (On rapproche le texte)
+    int x = 62; 
     
     int y = 2; // On commence à la ligne 2
     int t = tempsRestantSec(niveau);
+
+    // (Garde ta petite fonction effacerZone ici si tu l'as sortie, sinon remets-la)
+    // Si elle est au dessus de afficherHUD dans ton fichier, ne la remets pas ici.
+    /* void effacerZone(int lig, int col){
+        gotoligcol(lig, col);
+        printf("                               ");
+        gotoligcol(lig, col);
+    }
+    */
 
     // --- Stats ---
     effacerZone(y, x);
@@ -144,7 +153,7 @@ void afficherHUD(Niveau *niveau) {
     printf("Temps: %02d:%02d", t/60, t%60);
     color(BLANC, NOIR);
 
-    // --- Objectifs ---
+    // --- Objectifs (Bien alignés) ---
     effacerZone(y+9, x);
     color(CYAN, NOIR);
     printf("OBJECTIFS :");
@@ -161,14 +170,16 @@ void afficherHUD(Niveau *niveau) {
             if (fait >= total) color(VERT, NOIR);
             else color(BLANC, NOIR);
             
-            printf("- Item %d : %d / %d", k, fait, total);
+            // Affichage propre : "Item 1 : 5/10"
+            printf("- Item %d : %d/%d", k, fait, total);
             ligne++;
         }
     }
 
-    // --- Aide (En bas dans le cadre) ---
+    // --- Aide (Juste en dessous de la grille) ---
     color(GRIS, NOIR);
-    gotoligcol(24, 2); 
+    // On place le footer pile sous la grille
+    gotoligcol(LIGNES + 3, 2); 
     printf("[Fleches] Bouger | [ESPACE] Selection | [S] Sauver | [X] Quitter");
     color(BLANC, NOIR);
 }
