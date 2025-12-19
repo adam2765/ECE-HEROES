@@ -4,89 +4,105 @@
 #include "jeu.h"
 
 // Fonction pour démarrer la partie et remplir les données
-void initialiserNiveau(GameState *niveau, int numNiveau) {
-    // 1. On active le hasard (sinon c'est toujours pareil)
+void initialiserNiveau(Niveau *niveau, int numNiveau) {
+    // 1. On active le hasard
     srand(time(NULL));
 
     // 2. Initialisation des variables simples
-    niveau->niveauActuel = numNiveau;
-    niveau->vies = 3;            // 3 vies au départ
+    niveau->numeroNiveau = numNiveau;
+    niveau->vies = 3;            
     niveau->score = 0;
-    niveau->coupsRestants = 20;  // On a 20 coups pour réussir
-    niveau->tempsTotalSec = 120; // 2 minutes
-    niveau->startTime = time(NULL);
-    niveau->cursorX = 0;
-    niveau->cursorY = 0;
-    niveau->isSelected = 0;
+    niveau->coupsRestants = 20; 
+    
+    // --- IMPORTANT POUR L'AFFICHAGE ---
+    niveau->tempsTotalSec = 120;     // 2 minutes
+    niveau->startTime = time(NULL);  // Top départ
+    // ----------------------------------
+
+    // On met le pseudo à vide
+    niveau->pseudo[0] = '\0'; 
 
     // 3. Initialisation du Contrat (Objectifs à 0 au début)
-    // On parcourt le tableau des objectifs pour tout mettre à 0
-    for (int k = 0; k <= NB_ITEMS; k++) {
-        niveau->contrat[k] = 0;
-        niveau->elimines[k] = 0;
+    for (int k = 0; k <= NB_TYPES; k++) {
+        niveau->contrat.quantiteCible[k] = 0;
+        niveau->contrat.quantiteActuelle[k] = 0;
     }
     
-    // Exemple : Pour le niveau 1, on veut tuer 10 items de type 1 (Rouge)
-    // (Tu pourras changer ça plus tard pour faire des niveaux différents)
+    // Exemple : Pour le niveau 1, on veut tuer 10 items de type 1
     if (numNiveau == 1) {
-        niveau->contrat[1] = 10; 
+        niveau->contrat.quantiteCible[ITEM_1] = 10; 
     }
 
     // 4. Remplissage de la grille avec des items aléatoires
-    for(int i = 0; i < NB_LIG; i++) {
-        for(int j = 0; j < NB_COL; j++) {
+    for(int i = 0; i < LIGNES; i++) {
+        for(int j = 0; j < COLONNES; j++) {
             
             // On tire un nombre entre 1 et 5
-            int typeAleatoire = (rand() % NB_ITEMS) + 1;
+            int typeAleatoire = (rand() % NB_TYPES) + 1;
             
-            niveau->grille[i][j] = typeAleatoire;
+            niveau->grille[i][j].type = typeAleatoire;
+            niveau->grille[i][j].estSelectionne = 0; // Pas sélectionné
         }
     }
 }
 
 // Fonction pour échanger deux cases (Chapitre 11 : Pointeurs)
-void echangerCases(int *case1, int *case2) {
-    // Variable temporaire pour stocker la valeur pendant l'échange
-    int temp;
-    
-    temp = *case1;       // On sauvegarde la case 1
-    *case1 = *case2;     // La case 1 prend la valeur de la case 2
-    *case2 = temp;       // La case 2 récupère la valeur sauvegardée
+void echangerCases(Case *case1, Case *case2) {
+    Case temp;
+    temp = *case1;       // Sauvegarde
+    *case1 = *case2;     // Echange
+    *case2 = temp;       // Restauration
 }
 
-// ============== ITEMS ==============
+// ============== ITEMS SPÉCIAUX (Travail de ton collègue adapté) ==============
 
-// ITEM 1 : Bombe - détruit zone 3x3
-void itemBombe(GameState *niveau, int x, int y) {
+// ITEM 1 : Bombe - détruit zone 3x3 autour de (x,y)
+void itemBombe(Niveau *niveau, int x, int y) {
+    // On parcourt les cases autour (i, j)
     for (int i = x - 1; i <= x + 1; i++) {
         for (int j = y - 1; j <= y + 1; j++) {
-            if (i >= 0 && i < NB_LIG && j >= 0 && j < NB_COL) {
-                niveau->grille[i][j] = 0;
+            // On vérifie qu'on ne sort pas du tableau (Sécurité)
+            if (i >= 0 && i < LIGNES && j >= 0 && j < COLONNES) {
+                // ADAPTATION : On change le .type, pas juste l'int
+                niveau->grille[i][j].type = VIDE; // 0 = VIDE
+                
+                // Petit bonus : ça augmente le score !
+                niveau->score += 10; 
             }
         }
     }
 }
 
 // ITEM 2 : Supprimer une ligne entière
-void itemLigne(GameState *niveau, int ligne) {
-    for (int j = 0; j < NB_COL; j++) {
-        niveau->grille[ligne][j] = 0;
+void itemLigne(Niveau *niveau, int ligne) {
+    // Sécurité
+    if (ligne < 0 || ligne >= LIGNES) return;
+
+    for (int j = 0; j < COLONNES; j++) {
+        niveau->grille[ligne][j].type = VIDE;
+        niveau->score += 10;
     }
 }
 
 // ITEM 3 : Supprimer une colonne entière
-void itemColonne(GameState *niveau, int colonne) {
-    for (int i = 0; i < NB_LIG; i++) {
-        niveau->grille[i][colonne] = 0;
+void itemColonne(Niveau *niveau, int colonne) {
+    // Sécurité
+    if (colonne < 0 || colonne >= COLONNES) return;
+
+    for (int i = 0; i < LIGNES; i++) {
+        niveau->grille[i][colonne].type = VIDE;
+        niveau->score += 10;
     }
 }
 
 // ITEM 4 : Supprimer toutes les cases d'un type/couleur
-void itemCouleur(GameState *niveau, int type) {
-    for (int i = 0; i < NB_LIG; i++) {
-        for (int j = 0; j < NB_COL; j++) {
-            if (niveau->grille[i][j] == type) {
-                niveau->grille[i][j] = 0;
+void itemCouleur(Niveau *niveau, int type) {
+    for (int i = 0; i < LIGNES; i++) {
+        for (int j = 0; j < COLONNES; j++) {
+            // On compare avec .type
+            if (niveau->grille[i][j].type == type) {
+                niveau->grille[i][j].type = VIDE;
+                niveau->score += 10;
             }
         }
     }
