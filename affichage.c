@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h> // Indispensable pour tes potes
+#include <windows.h> 
 #include <time.h>
 #include <conio.h>
 #include "affichage.h"
@@ -102,6 +102,15 @@ void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
     }
     color(BLANC, NOIR); // On remet normal à la fin
 }
+
+// --- CORRECTION : J'AI SORTI LA FONCTION D'ICI ---
+// Petite fonction locale pour effacer proprement avant d'écrire
+void effacerZone(int lig, int col){
+    gotoligcol(lig, col);
+    printf("                               "); // 30 espaces vides
+    gotoligcol(lig, col); // On revient pour écrire
+}
+// -------------------------------------------------
 
 void afficherHUD(Niveau *niveau) {
     // ON FORCE LA POSITION X A 65 (Loin à droite)
