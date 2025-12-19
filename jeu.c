@@ -54,19 +54,16 @@ void echangerCases(Case *case1, Case *case2) {
     *case2 = temp;       // Restauration
 }
 
-// ============== ITEMS SPÉCIAUX (Travail de ton collègue adapté) ==============
+// ============== ITEMS SPÉCIAUX ==============
 
-// ITEM 1 : Bombe - détruit zone 3x3 autour de (x,y)
+// ITEM 1 : Bombe - détruit zone 3x3 autour de (x,y) [EXTENSION]
 void itemBombe(Niveau *niveau, int x, int y) {
     // On parcourt les cases autour (i, j)
     for (int i = x - 1; i <= x + 1; i++) {
         for (int j = y - 1; j <= y + 1; j++) {
             // On vérifie qu'on ne sort pas du tableau (Sécurité)
             if (i >= 0 && i < LIGNES && j >= 0 && j < COLONNES) {
-                // ADAPTATION : On change le .type, pas juste l'int
-                niveau->grille[i][j].type = VIDE; // 0 = VIDE
-                
-                // Petit bonus : ça augmente le score !
+                niveau->grille[i][j].type = VIDE;
                 niveau->score += 10; 
             }
         }
@@ -79,8 +76,10 @@ void itemLigne(Niveau *niveau, int ligne) {
     if (ligne < 0 || ligne >= LIGNES) return;
 
     for (int j = 0; j < COLONNES; j++) {
-        niveau->grille[ligne][j].type = VIDE;
-        niveau->score += 10;
+        if (niveau->grille[ligne][j].type != VIDE) {
+            niveau->grille[ligne][j].type = VIDE;
+            niveau->score += 10;
+        }
     }
 }
 
@@ -90,8 +89,10 @@ void itemColonne(Niveau *niveau, int colonne) {
     if (colonne < 0 || colonne >= COLONNES) return;
 
     for (int i = 0; i < LIGNES; i++) {
-        niveau->grille[i][colonne].type = VIDE;
-        niveau->score += 10;
+        if (niveau->grille[i][colonne].type != VIDE) {
+            niveau->grille[i][colonne].type = VIDE;
+            niveau->score += 10;
+        }
     }
 }
 
@@ -101,6 +102,18 @@ void itemCouleur(Niveau *niveau, int type) {
         for (int j = 0; j < COLONNES; j++) {
             // On compare avec .type
             if (niveau->grille[i][j].type == type) {
+                niveau->grille[i][j].type = VIDE;
+                niveau->score += 10;
+            }
+        }
+    }
+}
+
+// ITEM 5 : Supprimer un carré 4x4 à partir de (x, y)
+void itemCarre4x4(Niveau *niveau, int x, int y) {
+    for (int i = x; i < x + 4 && i < LIGNES; i++) {
+        for (int j = y; j < y + 4 && j < COLONNES; j++) {
+            if (niveau->grille[i][j].type != VIDE) {
                 niveau->grille[i][j].type = VIDE;
                 niveau->score += 10;
             }
@@ -132,15 +145,80 @@ void supprimerCase(Niveau *niveau, int i, int j) {
     niveau->grille[i][j].estSelectionne = 0;
 }
 
+// Détecte une croix de 9 items identiques (CDC page 5)
+// Une croix = 5 horizontal + 5 vertical avec centre commun
+int detecterCroix(Niveau *niveau) {
+    int modif = 0;
+    
+    // Une croix a besoin d'au moins 2 cases de chaque côté du centre
+    for (int i = 2; i < LIGNES - 2; i++) {
+        for (int j = 2; j < COLONNES - 2; j++) {
+            int t = niveau->grille[i][j].type;
+            if (t == VIDE) continue;
+            
+            // Vérifie si on a une croix complète
+            int haut = (niveau->grille[i-1][j].type == t && niveau->grille[i-2][j].type == t);
+            int bas = (niveau->grille[i+1][j].type == t && niveau->grille[i+2][j].type == t);
+            int gauche = (niveau->grille[i][j-1].type == t && niveau->grille[i][j-2].type == t);
+            int droite = (niveau->grille[i][j+1].type == t && niveau->grille[i][j+2].type == t);
+            
+            // Croix complète = haut + bas + gauche + droite
+            if (haut && bas && gauche && droite) {
+                // Supprime toute la ligne et la colonne
+                itemLigne(niveau, i);
+                itemColonne(niveau, j);
+                modif = 1;
+            }
+        }
+    }
+    return modif;
+}
+
+// Détecte un carré 4x4 d'items identiques (CDC page 5)
+int detecterCarre4x4(Niveau *niveau) {
+    int modif = 0;
+    
+    for (int i = 0; i <= LIGNES - 4; i++) {
+        for (int j = 0; j <= COLONNES - 4; j++) {
+            int t = niveau->grille[i][j].type;
+            if (t == VIDE) continue;
+            
+            // Vérifie si toutes les 16 cases du carré sont identiques
+            int estCarre = 1;
+            for (int di = 0; di < 4 && estCarre; di++) {
+                for (int dj = 0; dj < 4 && estCarre; dj++) {
+                    if (niveau->grille[i + di][j + dj].type != t) {
+                        estCarre = 0;
+                    }
+                }
+            }
+            
+            if (estCarre) {
+                itemCarre4x4(niveau, i, j);
+                modif = 1;
+            }
+        }
+    }
+    return modif;
+}
+
 int detecterEtSupprimerAlignements(Niveau *niveau) {
     int modif = 0;
     // On utilise une matrice temporaire pour marquer ce qu'il faut détruire
     // (Sinon, si on détruit tout de suite, on casse les croisements en T ou L)
     int aDetruire[LIGNES][COLONNES] = {0}; 
 
+    // --- 0. Détection figures spéciales AVANT les alignements simples ---
+    
+    // Carré 4x4 (CDC page 5)
+    if (detecterCarre4x4(niveau)) modif = 1;
+    
+    // Croix de 9 (CDC page 5)
+    if (detecterCroix(niveau)) modif = 1;
+
     // --- 1. Vérification Horizontale ---
     for (int i = 0; i < LIGNES; i++) {
-        for (int j = 0; j < COLONNES - 2; j++) {
+        for (int j = 0; j < COLONNES - 2; j++) { // -2 car on regarde j, j+1, j+2
             int t = niveau->grille[i][j].type;
             if (t == VIDE) continue;
             
@@ -156,12 +234,11 @@ int detecterEtSupprimerAlignements(Niveau *niveau) {
                     aDetruire[i][j + k] = 1;
                 }
                 
-                // ITEM AUTOMATIQUE : 5+ = Couleur, 4 = Bombe
-                if (longueur >= 5) {
+                // 6 alignés → supprime toute la couleur (CDC page 5)
+                if (longueur >= 6) {
                     itemCouleur(niveau, t);
-                } else if (longueur == 4) {
-                    itemBombe(niveau, i, j + 1); // Centre de l'alignement
                 }
+                // 4 ou 5 alignés → supprime juste la suite (normal)
                 
                 modif = 1;
                 j += longueur - 1; // On saute les cases déjà traitées
@@ -187,12 +264,11 @@ int detecterEtSupprimerAlignements(Niveau *niveau) {
                     aDetruire[i + k][j] = 1;
                 }
                 
-                // ITEM AUTOMATIQUE : 5+ = Couleur, 4 = Bombe
-                if (longueur >= 5) {
+                // 6 alignés → supprime toute la couleur (CDC page 5)
+                if (longueur >= 6) {
                     itemCouleur(niveau, t);
-                } else if (longueur == 4) {
-                    itemBombe(niveau, i + 1, j); // Centre de l'alignement
                 }
+                // 4 ou 5 alignés → supprime juste la suite (normal)
                 
                 modif = 1;
                 i += longueur - 1; // On saute les cases déjà traitées
