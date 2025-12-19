@@ -140,14 +140,31 @@ int detecterEtSupprimerAlignements(Niveau *niveau) {
 
     // --- 1. Vérification Horizontale ---
     for (int i = 0; i < LIGNES; i++) {
-        for (int j = 0; j < COLONNES - 2; j++) { // -2 car on regarde j, j+1, j+2
+        for (int j = 0; j < COLONNES - 2; j++) {
             int t = niveau->grille[i][j].type;
-            if (t != VIDE && t == niveau->grille[i][j+1].type && t == niveau->grille[i][j+2].type) {
-                // On marque les 3 cases
-                aDetruire[i][j] = 1;
-                aDetruire[i][j+1] = 1;
-                aDetruire[i][j+2] = 1;
+            if (t == VIDE) continue;
+            
+            // On compte combien de cases identiques à la suite
+            int longueur = 1;
+            while (j + longueur < COLONNES && niveau->grille[i][j + longueur].type == t) {
+                longueur++;
+            }
+            
+            // Si 3 ou plus → on marque à détruire
+            if (longueur >= 3) {
+                for (int k = 0; k < longueur; k++) {
+                    aDetruire[i][j + k] = 1;
+                }
+                
+                // ITEM AUTOMATIQUE : 5+ = Couleur, 4 = Bombe
+                if (longueur >= 5) {
+                    itemCouleur(niveau, t);
+                } else if (longueur == 4) {
+                    itemBombe(niveau, i, j + 1); // Centre de l'alignement
+                }
+                
                 modif = 1;
+                j += longueur - 1; // On saute les cases déjà traitées
             }
         }
     }
@@ -156,11 +173,29 @@ int detecterEtSupprimerAlignements(Niveau *niveau) {
     for (int j = 0; j < COLONNES; j++) {
         for (int i = 0; i < LIGNES - 2; i++) {
             int t = niveau->grille[i][j].type;
-            if (t != VIDE && t == niveau->grille[i+1][j].type && t == niveau->grille[i+2][j].type) {
-                aDetruire[i][j] = 1;
-                aDetruire[i+1][j] = 1;
-                aDetruire[i+2][j] = 1;
+            if (t == VIDE) continue;
+            
+            // On compte combien de cases identiques à la suite
+            int longueur = 1;
+            while (i + longueur < LIGNES && niveau->grille[i + longueur][j].type == t) {
+                longueur++;
+            }
+            
+            // Si 3 ou plus → on marque à détruire
+            if (longueur >= 3) {
+                for (int k = 0; k < longueur; k++) {
+                    aDetruire[i + k][j] = 1;
+                }
+                
+                // ITEM AUTOMATIQUE : 5+ = Couleur, 4 = Bombe
+                if (longueur >= 5) {
+                    itemCouleur(niveau, t);
+                } else if (longueur == 4) {
+                    itemBombe(niveau, i + 1, j); // Centre de l'alignement
+                }
+                
                 modif = 1;
+                i += longueur - 1; // On saute les cases déjà traitées
             }
         }
     }
