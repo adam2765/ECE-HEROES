@@ -39,30 +39,31 @@ int tempsRestantSec(Niveau *niveau) {
 /* --- FONCTIONS PRINCIPALES --- */
 
 void afficherCadre(void) {
-    system("cls"); // On nettoie tout
+    system("cls"); 
     color(BLANC, NOIR);
 
-    // LARGEUR COMPACTE (90 est suffisant pour emojis + HUD)
-    int largeur = 90; 
-    int hauteurCadre = LIGNES + 4; // Juste assez haut pour le footer
+    // LARGEUR ORIGINALE (Compacte)
+    // 55 caractères suffisent pour la grille de fruits
+    int largeur = 55; 
 
     // --- Ligne du Haut ---
     gotoligcol(0, 0);
     printf("+");
     for (int i = 0; i < largeur; i++) printf("-");
-    printf("|");
+    printf("+");
 
     // --- Murs Gauche et Droite ---
-    for (int i = 0; i < hauteurCadre; i++) {
-        gotoligcol(i + 1, 0);           printf("|"); // Mur Gauche
-        gotoligcol(i + 1, largeur + 1); printf("|"); // Mur Droit
+    // On descend jusqu'à 25 pour encadrer le menu du bas
+    for (int i = 0; i < 25; i++) {
+        gotoligcol(i + 1, 0);           printf("|"); 
+        gotoligcol(i + 1, largeur + 1); printf("|"); 
     }
 
     // --- Ligne du Bas ---
-    gotoligcol(hauteurCadre + 1, 0); // On ferme en bas
+    gotoligcol(26, 0); 
     printf("+");
     for (int i = 0; i < largeur; i++) printf("-");
-    printf("|");
+    printf("+");
 }
 
 void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
@@ -115,21 +116,21 @@ void effacerZone(int lig, int col){
 // -------------------------------------------------
 
 void afficherHUD(Niveau *niveau) {
-    // POSITION X COMPACTE (On rapproche le texte)
-    int x = 62; 
+    // ON COLLE LE TEXTE JUSTE A DROITE DU CADRE
+    // Le cadre finit à 55, donc on écrit à 60
+    int x = 60; 
     
-    int y = 2; // On commence à la ligne 2
+    int y = 2; 
     int t = tempsRestantSec(niveau);
 
-    // (Garde ta petite fonction effacerZone ici si tu l'as sortie, sinon remets-la)
-    // Si elle est au dessus de afficherHUD dans ton fichier, ne la remets pas ici.
-    /* void effacerZone(int lig, int col){
+    // Fonction de nettoyage (à laisser ici ou sortir selon ton compilateur)
+    // Si tu as une erreur, mets cette fonction EN DEHORS de afficherHUD
+    void effacerZone(int lig, int col){
         gotoligcol(lig, col);
-        printf("                               ");
+        printf("                        "); // Nettoyage court
         gotoligcol(lig, col);
     }
-    */
-
+    
     // --- Stats ---
     effacerZone(y, x);
     color(JAUNE, NOIR);
@@ -153,7 +154,7 @@ void afficherHUD(Niveau *niveau) {
     printf("Temps: %02d:%02d", t/60, t%60);
     color(BLANC, NOIR);
 
-    // --- Objectifs (Bien alignés) ---
+    // --- Objectifs ---
     effacerZone(y+9, x);
     color(CYAN, NOIR);
     printf("OBJECTIFS :");
@@ -170,17 +171,17 @@ void afficherHUD(Niveau *niveau) {
             if (fait >= total) color(VERT, NOIR);
             else color(BLANC, NOIR);
             
-            // Affichage propre : "Item 1 : 5/10"
-            printf("- Item %d : %d/%d", k, fait, total);
+            // CORRECTION ALIGNEMENT : on utilise %2d pour que les chiffres s'alignent
+            // Exemple : " 9 / 10" au lieu de "9 / 10" qui décale tout
+            printf("- Item %d : %2d / %2d", k, fait, total);
             ligne++;
         }
     }
 
-    // --- Aide (Juste en dessous de la grille) ---
+    // --- Aide (En bas, centrée sous la grille) ---
     color(GRIS, NOIR);
-    // On place le footer pile sous la grille
-    gotoligcol(LIGNES + 3, 2); 
-    printf("[Fleches] Bouger | [ESPACE] Selection | [S] Sauver | [X] Quitter");
+    gotoligcol(24, 2); 
+    printf("[Fleches] Bouger | [ESPACE] Selection | [X] Quitter");
     color(BLANC, NOIR);
 }
 
