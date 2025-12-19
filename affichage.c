@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h> // Indispensable pour tes potes
+#include <windows.h> 
 #include <time.h>
 #include <conio.h>
 #include "affichage.h"
