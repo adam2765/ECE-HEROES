@@ -1,155 +1,149 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h>
-#include "affichage.h" // Lien indispensable vers ton header
+#include <windows.h> // Indispensable pour tes potes
+#include <time.h>
+#include "affichage.h"
 
-// Variable globale interne au module (static = invisible pour les autres fichiers)
-static HANDLE gH;
+static HANDLE gH; // Handle de la console
 
-/* ================= OUTILS TECHNIQUES ================= */
+/* --- OUTILS TECHNIQUES --- */
 
-// Initialise la console (cache le curseur clignotant)
-// A appeler une seule fois au tout début du main de ton collègue
 void initConsole(void) {
     gH = GetStdHandle(STD_OUTPUT_HANDLE);
+    // Cache le curseur clignotant moche
     CONSOLE_CURSOR_INFO info = {100, FALSE}; 
     SetConsoleCursorInfo(gH, &info);
 }
 
-// Change la couleur
 void color(int t, int f) {
     SetConsoleTextAttribute(gH, (WORD)(f * 16 + t));
 }
 
-// Déplace le curseur d'écriture (Evite d'utiliser system("cls"))
 void gotoligcol(int y, int x) {
     COORD c = {(SHORT)x, (SHORT)y};
     SetConsoleCursorPosition(gH, c);
 }
 
-// Efface une ligne spécifique (Pour le HUD dynamique)
 void clearLineAt(int y, int x, int w) {
     gotoligcol(y, x);
     for (int i = 0; i < w; i++) putchar(' ');
 }
 
-int tempsRestantSec(const GameState *e) {
-    int ecoule = (int)difftime(time(NULL), e->startTime);
-    int r = e->tempsTotalSec - ecoule;
+int tempsRestantSec(Niveau *niveau) {
+    int ecoule = (int)difftime(time(NULL), niveau->startTime);
+    int r = niveau->tempsTotalSec - ecoule;
     return (r < 0) ? 0 : r;
 }
 
-/* ================= FONCTIONS D'AFFICHAGE ================= */
+/* --- FONCTIONS PRINCIPALES --- */
 
-// Affiche le décor fixe (Cadre). A appeler AVANT la boucle de jeu.
 void afficherCadre(void) {
-    system("cls"); // Seul nettoyage global autorisé au lancement
+    system("cls");
     color(BLANC, NOIR);
 
-    // Bordure Haute
+    // Haut
     gotoligcol(0, 1);
     printf("|");
-    for (int i = 0; i < NB_COL; i++) printf("-");
+    for (int i = 0; i < COLONNES; i++) printf("---");
     printf("|");
 
-    // Bordures Latérales
-    for (int i = 0; i < NB_LIG; i++) {
-        gotoligcol(i + 1, 1);          printf("|");
-        gotoligcol(i + 1, NB_COL + 2); printf("|");
+    // Côtés
+    for (int i = 0; i < LIGNES; i++) {
+        gotoligcol(i + 1, 1);              printf("|");
+        gotoligcol(i + 1, (COLONNES*3)+2); printf("|");
     }
 
-    // Bordure Basse
-    gotoligcol(NB_LIG + 1, 1);
+    // Bas
+    gotoligcol(LIGNES + 1, 1);
     printf("|");
-    for (int i = 0; i < NB_COL; i++) printf("-");
+    for (int i = 0; i < COLONNES; i++) printf("---");
     printf("|");
-
-    color(BLANC, NOIR);
 }
 
-// Affiche le contenu du plateau. A appeler DANS la boucle de jeu.
-void afficherGrille(const GameState *e) {
-    // Symboles items (A, B, C...) et couleurs correspondantes
-    char sym[] = {'.','A','B','C','D','E'}; 
-    int col[]  = {GRIS,ROUGE,VERT,BLEU,JAUNE,MAGENTA};
+void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
+    char sym[] = {'.','O','@','#','&','%'}; // Symboles
+    int col[]  = {GRIS,ROUGE,BLEU,VERT,JAUNE,MAGENTA}; // Couleurs
 
-    for (int i = 0; i < NB_LIG; i++) {
+    for (int i = 0; i < LIGNES; i++) {
         gotoligcol(i + 1, 2);
-        for (int j = 0; j < NB_COL; j++) {
-            int v = e->grille[i][j];
-            if (v < 0 || v > NB_ITEMS) v = 0;
-
-            int bg = NOIR, fg = col[v];
+        for (int j = 0; j < COLONNES; j++) {
             
-            // Gestion visuelle du curseur (Gris = Survol, Rouge = Sélection)
-            if (i == e->cursorY && j == e->cursorX) {
-                bg = e->isSelected ? ROUGE : GRIS;
+            // On récupère le type dans TA structure Case
+            int type = niveau->grille[i][j].type;
+            if (type > NB_TYPES) type = 0;
+
+            int fg = col[type];
+            int bg = NOIR;
+
+            // Gestion Curseur & Sélection
+            if (i == curseurY && j == curseurX) {
+                // Si sélectionné : ROUGE, sinon GRIS
+                bg = (niveau->grille[i][j].estSelectionne) ? ROUGE : GRIS;
                 fg = BLANC;
+            }
+            else if (niveau->grille[i][j].estSelectionne) {
+                // Sélectionné mais on est parti ailleurs
+                bg = BLANC;
+                fg = NOIR;
             }
 
             color(fg, bg);
-            putchar(sym[v]);
+            printf(" %c ", sym[type]);
         }
     }
     color(BLANC, NOIR);
 }
 
-// Affiche les infos latérales. A appeler DANS la boucle de jeu.
-void afficherHUD(const GameState *e) {
-    const int x = NB_COL + 6; // Position à droite du cadre
-    const int y = 2;
-    const int W = 70; // Largeur de nettoyage pour effacer les anciens textes
+void afficherHUD(Niveau *niveau) {
+    int x = (COLONNES * 3) + 6; // Position à droite
+    int y = 2;
+    int w = 40; // Largeur effacement
+    int t = tempsRestantSec(niveau);
 
-    int t = tempsRestantSec(e);
+    // --- Stats ---
+    clearLineAt(y, x, w); gotoligcol(y, x);
+    printf("NIVEAU %d", niveau->numeroNiveau);
 
-    // --- Infos Partie ---
-    clearLineAt(y, x, W); gotoligcol(y, x);
-    printf("Niveau : %d", e->niveauActuel);
-
-    clearLineAt(y + 2, x, W); gotoligcol(y + 2, x);
-    printf("Vies : ");
+    clearLineAt(y+2, x, w); gotoligcol(y+2, x);
+    printf("Vies: ");
     color(ROUGE, NOIR);
-    for (int i = 0; i < e->vies; i++) printf("<3 ");
+    for(int i=0; i<niveau->vies; i++) printf("<3 ");
     color(BLANC, NOIR);
 
-    clearLineAt(y + 4, x, W); gotoligcol(y + 4, x);
-    printf("Score : %d", e->score);
+    clearLineAt(y+4, x, w); gotoligcol(y+4, x);
+    printf("Score: %d", niveau->score);
 
-    clearLineAt(y + 5, x, W); gotoligcol(y + 5, x);
-    printf("Coups restants : %d", e->coupsRestants);
+    clearLineAt(y+5, x, w); gotoligcol(y+5, x);
+    printf("Coups: %d", niveau->coupsRestants);
 
-    clearLineAt(y + 6, x, W); gotoligcol(y + 6, x);
-    color(t < 30 ? ROUGE : BLANC, NOIR); // Alerte rouge si temps < 30s
-    printf("Temps restant : %02d:%02d", t / 60, t % 60);
+    clearLineAt(y+7, x, w); gotoligcol(y+7, x);
+    color((t<30)?ROUGE:BLANC, NOIR);
+    printf("Temps: %02d:%02d", t/60, t%60);
     color(BLANC, NOIR);
 
-    // --- Contrat (Objectifs) ---
-    clearLineAt(y + 8, x, W); gotoligcol(y + 8, x);
-    printf("CONTRAT (Elimines / Objectif / Reste):");
-
-    int l = y + 9;
-    for (int i = 1; i <= NB_ITEMS; i++) {
-        if (e->contrat[i] > 0) {
-            int reste = e->contrat[i] - e->elimines[i];
-            if (reste < 0) reste = 0;
-
-            clearLineAt(l, x, W); gotoligcol(l, x);
+    // --- Objectifs ---
+    clearLineAt(y+9, x, w); gotoligcol(y+9, x);
+    printf("OBJECTIFS :");
+    
+    int ligne = y + 10;
+    for(int k=1; k<=NB_TYPES; k++) {
+        if (niveau->contrat.quantiteCible[k] > 0) {
+            int fait = niveau->contrat.quantiteActuelle[k];
+            int total = niveau->contrat.quantiteCible[k];
             
-            if (reste == 0) color(VERT, NOIR); // Vert = Objectif atteint
+            clearLineAt(ligne, x, w); gotoligcol(ligne, x);
+            
+            if (fait >= total) color(VERT, NOIR);
             else color(BLANC, NOIR);
             
-            printf("Item %c : %d / %d  (Reste %d)", 'A'+(i-1), e->elimines[i], e->contrat[i], reste);
-            l++;
+            printf("- Item %d : %d / %d", k, fait, total);
+            ligne++;
         }
     }
-    color(BLANC, NOIR);
 
-    // Nettoyage esthétique en dessous
-    for(int k=0; k<3; k++) clearLineAt(l+k, x, W);
-
-    // --- Pied de page (Aide) ---
-    clearLineAt(NB_LIG - 1, x, W); gotoligcol(NB_LIG - 1, x);
+    // --- Aide ---
     color(GRIS, NOIR);
-    printf("[Fleches/ZQSD] Bouger | [ESPACE] Selection | [4] Quitter");
+    gotoligcol(LIGNES+2, 2);
+    printf("[Fleches] Bouger | [ESPACE] Selection | [X] Quitter");
     color(BLANC, NOIR);
 }

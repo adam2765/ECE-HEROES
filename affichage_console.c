@@ -1,7 +1,7 @@
 #include "affichage_console.h"
 //variables globales statiques, utilisables par tous les sous-programmes du fichier
-static int __BACKGROUND = BLACK; //couleur de fond par défaut
-static int __FOREGROUND = WHITE; //couleur du texte par défaut
+static int __BACKGROUND = BLACK; //couleur de fond par dï¿½faut
+static int __FOREGROUND = WHITE; //couleur du texte par dï¿½faut
 //effacer la console
 void clrscr() {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -18,7 +18,7 @@ void clrscr() {
 
     SetConsoleCursorPosition(hConsole, home);
 }
-//déplacer le curseur à la position horizontale x, verticale y
+//dï¿½placer le curseur ï¿½ la position horizontale x, verticale y
 void gotoxy(int x, int y)
 {
 HANDLE h=GetStdHandle(STD_OUTPUT_HANDLE);
@@ -44,7 +44,7 @@ void delete_line()
     gotoxy (info.dwCursorPosition.X + 1,
     info.dwCursorPosition.Y + 1);
 }
-//récupérer la position horizontale du curseur
+//rï¿½cupï¿½rer la position horizontale du curseur
 int wherex ()
 {
 CONSOLE_SCREEN_BUFFER_INFO info;
@@ -53,7 +53,7 @@ CONSOLE_SCREEN_BUFFER_INFO info;
                                                       &info);
     return info.dwCursorPosition.X;
 }
-//récupérer la position verticale du curseur
+//rï¿½cupï¿½rer la position verticale du curseur
 int wherey ()
 {
 CONSOLE_SCREEN_BUFFER_INFO info;

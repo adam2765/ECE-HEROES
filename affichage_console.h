@@ -23,13 +23,13 @@ typedef enum{
 } COLORS;
 //effacer la console
 void clrscr ();
-//déplacer le curseur à la position horizontale x, verticale y
+//dï¿½placer le curseur ï¿½ la position horizontale x, verticale y
 void gotoxy(int x, int y);
 //effacer la suite de la ligne
 void delete_line();
-//récupérer la position horizontale du curseur
+//rï¿½cupï¿½rer la position horizontale du curseur
 int wherex ();
-//récupérer la position verticale du curseur
+//rï¿½cupï¿½rer la position verticale du curseur
 int wherey ();
 //changer la couleur du texte
 void text_color(int color);
@@ -41,13 +41,13 @@ void set_color(int colorT,int colorBg);
 void hide_cursor();
 //montrer le curseur
 void show_cursor();
-/*savoir si une touche a été pressée
-retour : 1 si une touche a été pressée (caractère disponible en lecture avec getch), 0 sinon*/
+/*savoir si une touche a ï¿½tï¿½ pressï¿½e
+retour : 1 si une touche a ï¿½tï¿½ pressï¿½e (caractï¿½re disponible en lecture avec getch), 0 sinon*/
 int kbhit();
-/*Lire un caractère du clavier immédiatement, sans avoir besoin d'appuyer sur Entrée.
-s'utilise généralement avec kbhit :
-si une touche a été pressée, on lit le caractère correspondant
-Retour :  entier ayant le même code binaire que le caractère lu (code ASCII du caractère)
+/*Lire un caractï¿½re du clavier immï¿½diatement, sans avoir besoin d'appuyer sur Entrï¿½e.
+s'utilise gï¿½nï¿½ralement avec kbhit :
+si une touche a ï¿½tï¿½ pressï¿½e, on lit le caractï¿½re correspondant
+Retour :  entier ayant le mï¿½me code binaire que le caractï¿½re lu (code ASCII du caractï¿½re)
 */
 int getch();
 #endif // AFFICHAGE_CONSOLE_H_INCLUDED
