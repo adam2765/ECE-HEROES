@@ -53,3 +53,6 @@ dkms.conf
 
 # debug information files
 *.dwo
+# Fichiers de sauvegarde personnels
+sauvegarde.txt
+sauvegardes.txt
