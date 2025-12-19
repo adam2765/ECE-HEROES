@@ -1,14 +1,14 @@
 #ifndef AFFICHAGE_H
 #define AFFICHAGE_H
 
-#include <time.h> // Nécessaire pour le type time_t
+#include <time.h> // Nécessaire pour time_t
 
-// --- CONSTANTES ---
+// --- CONSTANTES D'AFFICHAGE ---
 #define NB_LIG 25
 #define NB_COL 45
 #define NB_ITEMS 5
 
-// Couleurs
+// Codes Couleurs (Pour que tes collègues puissent aussi les utiliser si besoin)
 #define NOIR 0
 #define BLEU 9
 #define VERT 10
@@ -18,15 +18,11 @@
 #define BLANC 15
 #define GRIS 8
 
-// Touches
-#define KEY_UP     1001
-#define KEY_DOWN   1002
-#define KEY_LEFT   1003
-#define KEY_RIGHT  1004
-
-// --- STRUCTURE DU JEU ---
+// --- STRUCTURE PARTAGÉE ---
+// NOTE POUR L'EQUIPE : Cette structure définit les données que l'affichage doit lire.
+// Si une structure commune existe déjà (ex: jeu.h), il faudra déplacer ceci dedans.
 typedef struct {
-    int grille[NB_LIG][NB_COL];
+    int grille[NB_LIG][NB_COL]; // Matrice du plateau
     int vies;
     int score;
     int coupsRestants;
@@ -36,29 +32,28 @@ typedef struct {
     int tempsTotalSec;
     time_t startTime;
 
-    // Contrat + progression
-    int contrat[NB_ITEMS + 1];   // objectif à atteindre
-    int elimines[NB_ITEMS + 1];  // combien éliminés
+    // Contrat (Objectif)
+    int contrat[NB_ITEMS + 1];   // Objectif à atteindre par type d'item
+    int elimines[NB_ITEMS + 1];  // Combien ont été éliminés
 
-    // Curseur
+    // Curseur & Interaction
     int cursorX;
     int cursorY;
-    int isSelected;
+    int isSelected; // 1 si le joueur a activé la sélection, 0 sinon
 } GameState;
 
-// --- PROTOTYPES ---
+// --- PROTOTYPES (TES FONCTIONS) ---
 
-// Outils Console
+// Outils techniques (Initialisation console)
 void initConsole(void);
 void color(int t, int f);
 void gotoligcol(int y, int x);
 void clearLineAt(int y, int x, int w);
 
-// Logique Temps & Input
+// Calcul du temps (Utile pour l'affichage)
 int tempsRestantSec(const GameState *e);
-int lireTouche(void);
 
-// Fonctions d'Affichage
+// Fonctions principales d'affichage à appeler dans le main
 void afficherCadre(void);
 void afficherGrille(const GameState *e);
 void afficherHUD(const GameState *e);
