@@ -147,3 +147,78 @@ void afficherHUD(Niveau *niveau) {
     printf("[Fleches] Bouger | [ESPACE] Selection | [X] Quitter");
     color(BLANC, NOIR);
 }
+
+/* =========================================================
+   PARTIE MENU : LE VISUEL STYLÉ
+   ========================================================= */
+
+int afficherMenuPrincipal(void) {
+    system("cls"); // On nettoie l'écran pour afficher le menu proprement
+    
+    // Coordonnées pour centrer un peu le menu
+    int x_menu = 30; 
+    int y_menu = 10;
+
+    // --- 1. LE TITRE (ASCII ART) ---
+    // Affiche "CANDY" en gros avec des couleurs alternées
+    color(MAGENTA, NOIR);
+    printf("\n\n");
+    printf("        ______   _____  ______  _    _  ______  _____ \n");
+    printf("       |  ____| / ____||  ____|| |  | ||  ____||  __ \\\n");
+    color(CYAN, NOIR); // Petit effet dégradé
+    printf("       | |__   | |     | |__   | |__| || |__   | |__) |\n");
+    printf("       |  __|  | |     |  __|  |  __  ||  __|  |  _  / \n");
+    color(MAGENTA, NOIR);
+    printf("       | |____ | |____ | |____ | |  | || |____ | | \\ \\ \n");
+    printf("       |______| \\_____||______||_|  |_||______||_|  \\_\\\n");
+    printf("\n");
+    
+    // --- 2. LE CADRE DES OPTIONS ---
+    color(BLANC, NOIR);
+    
+    // Haut du cadre
+    gotoligcol(y_menu - 2, x_menu); printf("========================================");
+    gotoligcol(y_menu - 1, x_menu); printf("|                                      |");
+    
+    // Option 1 : JOUER (Vert)
+    gotoligcol(y_menu, x_menu);     printf("|      ");
+    color(VERT, NOIR);              printf("[1] NOUVELLE PARTIE");
+    color(BLANC, NOIR);             printf("             |");
+
+    gotoligcol(y_menu + 1, x_menu); printf("|                                      |");
+
+    // Option 2 : CHARGER (Jaune)
+    gotoligcol(y_menu + 2, x_menu); printf("|      ");
+    color(JAUNE, NOIR);             printf("[2] CHARGER PARTIE");
+    color(BLANC, NOIR);             printf("              |");
+
+    gotoligcol(y_menu + 3, x_menu); printf("|                                      |");
+
+    // Option 3 : QUITTER (Rouge)
+    gotoligcol(y_menu + 4, x_menu); printf("|      ");
+    color(ROUGE, NOIR);             printf("[3] QUITTER");
+    color(BLANC, NOIR);             printf("                     |");
+
+    // Bas du cadre
+    gotoligcol(y_menu + 5, x_menu); printf("|                                      |");
+    gotoligcol(y_menu + 6, x_menu); printf("========================================");
+
+    // --- 3. PETITE INFO EN BAS ---
+    color(GRIS, NOIR);
+    gotoligcol(y_menu + 8, x_menu + 5); 
+    printf("Projet C - ECE Paris 2025");
+    
+    // --- 4. GESTION DU CHOIX ---
+    gotoligcol(y_menu + 10, x_menu + 5);
+    color(BLANC, NOIR);
+    printf("Votre choix > ");
+    
+    // Lecture sécurisée : on attend tant que l'utilisateur ne tape pas 1, 2 ou 3
+    char choix;
+    do {
+        choix = _getch(); // _getch() lit sans attendre "Entrée"
+    } while (choix < '1' || choix > '3');
+    
+    // On renvoie un entier (1, 2 ou 3) pour que le main.c sache quoi faire
+    return choix - '0'; 
+}
