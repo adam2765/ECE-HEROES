@@ -62,37 +62,44 @@ void afficherCadre(void) {
 }
 
 void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
-    char sym[] = {'.','O','@','#','&','%'}; // Symboles
-    int col[]  = {GRIS,ROUGE,BLEU,VERT,JAUNE,MAGENTA}; // Couleurs
-
+    // 1. LES FRUITS (Emojis)
+    // Index: 0=Vide, 1=Rouge, 2=Bleu, 3=Vert, 4=Jaune, 5=Magenta
+    // Note : On met des guillemets doubles " "
+    char *sym[] = {"  ", "🍉", "🫐", "🥝", "🍋", "🍑", ""}; 
+    
+    // 2. COULEURS DE FOND UNIQUEMENT
+    // (Les émojis ont déjà leur couleur, on change juste le fond pour la sélection)
+    
     for (int i = 0; i < LIGNES; i++) {
-        gotoligcol(i + 1, 2);
+        gotoligcol(i + 1, 2); // On se place
+        
         for (int j = 0; j < COLONNES; j++) {
             
-            // On récupère le type dans TA structure Case
             int type = niveau->grille[i][j].type;
             if (type > NB_TYPES) type = 0;
 
-            int fg = col[type];
-            int bg = NOIR;
+            int bg = NOIR;      // Fond par défaut
 
-            // Gestion Curseur & Sélection
+            // --- GESTION CURSEUR & SELECTION ---
             if (i == curseurY && j == curseurX) {
-                // Si sélectionné : ROUGE, sinon GRIS
-                bg = (niveau->grille[i][j].estSelectionne) ? ROUGE : GRIS;
-                fg = BLANC;
+                // Curseur blanc sur la case actuelle
+                bg = BLANC; 
             }
             else if (niveau->grille[i][j].estSelectionne) {
-                // Sélectionné mais on est parti ailleurs
-                bg = BLANC;
-                fg = NOIR;
+                // Fond Rouge si on a cliqué (sélectionné)
+                bg = ROUGE; 
             }
 
-            color(fg, bg);
-            printf(" %c ", sym[type]);
+            // On applique la couleur (le texte reste blanc, le fond change)
+            color(BLANC, bg);
+            
+            // AFFICHE L'EMOJI
+            // %s car c'est une chaîne de caractères (UTF-8)
+            // On met un espace avant/après pour aérer la grille
+            printf(" %s ", sym[type]); 
         }
     }
-    color(BLANC, NOIR);
+    color(BLANC, NOIR); // On remet normal à la fin
 }
 
 void afficherHUD(Niveau *niveau) {

@@ -10,6 +10,8 @@
 #include "affichage.h"
 #include "sauvegarde.h"
 
+
+
 // --- FONCTION CŒUR DU JEU : La boucle de la partie ---
 void jouerNiveau(Niveau *monNiveau) {
     int curseurX = 0;
@@ -157,6 +159,7 @@ void jouerNiveau(Niveau *monNiveau) {
 
 // --- PROGRAMME PRINCIPAL (MAIN) ---
 int main() {
+    SetConsoleOutputCP(65001);
     Niveau monNiveau;
     int choixMenu = 0;
 
