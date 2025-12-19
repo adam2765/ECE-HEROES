@@ -107,3 +107,114 @@ void itemCouleur(Niveau *niveau, int type) {
         }
     }
 }
+
+/* =========================================================
+   MOTEUR MATCH-3 (DESTRUCTION & GRAVITÉ)
+   ========================================================= */
+
+// Fonction interne pour supprimer une case proprement
+void supprimerCase(Niveau *niveau, int i, int j) {
+    int type = niveau->grille[i][j].type;
+    
+    // Si c'est déjà vide, on ne fait rien
+    if (type == VIDE) return;
+
+    // 1. On met à jour le contrat (Objectifs)
+    if (type <= NB_TYPES) { // Si c'est un bonbon normal
+        niveau->contrat.quantiteActuelle[type]++;
+    }
+
+    // 2. On augmente le score
+    niveau->score += 10;
+
+    // 3. On vide la case
+    niveau->grille[i][j].type = VIDE;
+    niveau->grille[i][j].estSelectionne = 0;
+}
+
+int detecterEtSupprimerAlignements(Niveau *niveau) {
+    int modif = 0;
+    // On utilise une matrice temporaire pour marquer ce qu'il faut détruire
+    // (Sinon, si on détruit tout de suite, on casse les croisements en T ou L)
+    int aDetruire[LIGNES][COLONNES] = {0}; 
+
+    // --- 1. Vérification Horizontale ---
+    for (int i = 0; i < LIGNES; i++) {
+        for (int j = 0; j < COLONNES - 2; j++) { // -2 car on regarde j, j+1, j+2
+            int t = niveau->grille[i][j].type;
+            if (t != VIDE && t == niveau->grille[i][j+1].type && t == niveau->grille[i][j+2].type) {
+                // On marque les 3 cases
+                aDetruire[i][j] = 1;
+                aDetruire[i][j+1] = 1;
+                aDetruire[i][j+2] = 1;
+                modif = 1;
+            }
+        }
+    }
+
+    // --- 2. Vérification Verticale ---
+    for (int j = 0; j < COLONNES; j++) {
+        for (int i = 0; i < LIGNES - 2; i++) {
+            int t = niveau->grille[i][j].type;
+            if (t != VIDE && t == niveau->grille[i+1][j].type && t == niveau->grille[i+2][j].type) {
+                aDetruire[i][j] = 1;
+                aDetruire[i+1][j] = 1;
+                aDetruire[i+2][j] = 1;
+                modif = 1;
+            }
+        }
+    }
+
+    // --- 3. Suppression réelle ---
+    if (modif) {
+        for (int i = 0; i < LIGNES; i++) {
+            for (int j = 0; j < COLONNES; j++) {
+                if (aDetruire[i][j]) {
+                    supprimerCase(niveau, i, j);
+                }
+            }
+        }
+    }
+
+    return modif; // Renvoie 1 si on a cassé des trucs
+}
+
+void faireTomberEtRemplir(Niveau *niveau) {
+    // Pour chaque colonne...
+    for (int j = 0; j < COLONNES; j++) {
+        // GRAVITÉ : On remonte de bas en haut
+        // On place un curseur d'écriture 'w' en bas
+        int w = LIGNES - 1; 
+        
+        // On parcourt la colonne de bas en haut avec un curseur de lecture 'r'
+        for (int r = LIGNES - 1; r >= 0; r--) {
+            if (niveau->grille[r][j].type != VIDE) {
+                // Si la case n'est pas vide, on la fait tomber à la position 'w'
+                niveau->grille[w][j] = niveau->grille[r][j];
+                w--; // On remonte le curseur d'écriture
+            }
+        }
+
+        // REMPLISSAGE : Tout ce qui est au-dessus de 'w' est vide, on remplit !
+        for (int k = w; k >= 0; k--) {
+            niveau->grille[k][j].type = (rand() % NB_TYPES) + 1;
+            niveau->grille[k][j].estSelectionne = 0;
+        }
+    }
+}
+
+void gererCombos(Niveau *niveau) {
+    int combo = 0;
+    // Boucle tant qu'il y a des alignements (Réaction en chaîne)
+    do {
+        // 1. On supprime les lignes de 3
+        combo = detecterEtSupprimerAlignements(niveau);
+        
+        if (combo) {
+            // 2. Si on a supprimé, on fait tomber et on remplit
+            // Petite astuce visuelle : Si tu veux voir l'animation,
+            // il faudrait afficher et faire un Sleep ici, mais on fait simple.
+            faireTomberEtRemplir(niveau);
+        }
+    } while (combo); 
+}

@@ -26,4 +26,16 @@ void itemColonne(Niveau *niveau, int colonne);
 // Détruit toutes les cases d'une certaine couleur/type sur tout le plateau
 void itemCouleur(Niveau *niveau, int type);
 
+// --- LOGIQUE MATCH-3 ---
+
+// 1. Détecte les alignements (3 ou +), supprime les bonbons et met à jour le score/contrat
+// Retourne 1 si des bonbons ont été détruits, 0 sinon
+int detecterEtSupprimerAlignements(Niveau *niveau);
+
+// 2. Fait tomber les bonbons du haut vers le bas (Gravité) et remplit les trous
+void faireTomberEtRemplir(Niveau *niveau);
+
+// 3. Fonction Mère : Enchaine détection et gravité tant qu'il y a des combos
+void gererCombos(Niveau *niveau);
+
 #endif
