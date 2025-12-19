@@ -42,23 +42,25 @@ void afficherCadre(void) {
     system("cls");
     color(BLANC, NOIR);
 
-    // Haut
+    // Haut (On rajoute des tirets pour couvrir la largeur supplémentaire des émojis)
     gotoligcol(0, 1);
     printf("|");
     for (int i = 0; i < COLONNES; i++) printf("---");
-    printf("|");
+    printf("-------|");
 
     // Côtés
     for (int i = 0; i < LIGNES; i++) {
         gotoligcol(i + 1, 1);              printf("|");
-        gotoligcol(i + 1, (COLONNES*3)+2); printf("|");
+        
+        // ON POUSSE LE BORD DROIT (Avant c'était +2, on met +10)
+        gotoligcol(i + 1, (COLONNES*3)+10); printf("|");
     }
 
     // Bas
     gotoligcol(LIGNES + 1, 1);
     printf("|");
     for (int i = 0; i < COLONNES; i++) printf("---");
-    printf("|");
+    printf("-------|");
 }
 
 void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
@@ -102,9 +104,11 @@ void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
 }
 
 void afficherHUD(Niveau *niveau) {
-    int x = (COLONNES * 3) + 6; // Position à droite
+    // ON DECALE LE TEXTE VERS LA DROITE
+    int x = (COLONNES * 3) + 14; 
+    
     int y = 2;
-    int w = 40; // Largeur effacement
+    int w = 40; 
     int t = tempsRestantSec(niveau);
 
     // --- Stats ---
@@ -114,7 +118,7 @@ void afficherHUD(Niveau *niveau) {
     clearLineAt(y+2, x, w); gotoligcol(y+2, x);
     printf("Vies: ");
     color(ROUGE, NOIR);
-    for(int i=0; i<niveau->vies; i++) printf("❤️ ");
+    for(int i=0; i<niveau->vies; i++) printf("❤️"); 
     color(BLANC, NOIR);
 
     clearLineAt(y+4, x, w); gotoligcol(y+4, x);
@@ -148,10 +152,10 @@ void afficherHUD(Niveau *niveau) {
         }
     }
 
-    // --- Aide ---
+    // --- Aide (Toujours décalée vers le bas pour ne pas gêner) ---
     color(GRIS, NOIR);
-    gotoligcol(LIGNES+5, 2);
-    printf("[Fleches] Bouger | [ESPACE] Selection | [X] Quitter");
+    gotoligcol(LIGNES + 5, 2); 
+    printf("[Fleches] Bouger | [ESPACE] Selection | [S] Sauver | [X] Quitter");
     color(BLANC, NOIR);
 }
 
