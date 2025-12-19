@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <windows.h> // Indispensable pour tes potes
 #include <time.h>
+#include <conio.h>
 #include "affichage.h"
 
 static HANDLE gH; // Handle de la console
