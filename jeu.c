@@ -52,3 +52,40 @@ void echangerCases(Case *case1, Case *case2) {
     *case1 = *case2;     // La case 1 prend la valeur de la case 2
     *case2 = temp;       // La case 2 récupère la valeur sauvegardée
 }
+// ============== ITEMS ==============
+
+// ITEM 1 : Bombe - détruit zone 3x3
+void itemBombe(Niveau *niveau, int x, int y) {
+    for (int i = x - 1; i <= x + 1; i++) {
+        for (int j = y - 1; j <= y + 1; j++) {
+            if (i >= 0 && i < LIGNES && j >= 0 && j < COLONNES) {
+                niveau->grille[i][j].type = 0;
+            }
+        }
+    }
+}
+
+// ITEM 2 : Supprimer une ligne entière
+void itemLigne(Niveau *niveau, int ligne) {
+    for (int j = 0; j < COLONNES; j++) {
+        niveau->grille[ligne][j].type = 0;
+    }
+}
+
+// ITEM 3 : Supprimer une colonne entière
+void itemColonne(Niveau *niveau, int colonne) {
+    for (int i = 0; i < LIGNES; i++) {
+        niveau->grille[i][colonne].type = 0;
+    }
+}
+
+// ITEM 4 : Supprimer toutes les cases d'un type/couleur
+void itemCouleur(Niveau *niveau, int type) {
+    for (int i = 0; i < LIGNES; i++) {
+        for (int j = 0; j < COLONNES; j++) {
+            if (niveau->grille[i][j].type == type) {
+                niveau->grille[i][j].type = 0;
+            }
+        }
+    }
+}
