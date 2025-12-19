@@ -68,7 +68,6 @@ void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
     char *sym[] = {"  ", "🍉", "🫐", "🥝", "🍋", "🍑", ""}; 
     
     // 2. COULEURS DE FOND UNIQUEMENT
-    // (Les émojis ont déjà leur couleur, on change juste le fond pour la sélection)
     
     for (int i = 0; i < LIGNES; i++) {
         gotoligcol(i + 1, 2); // On se place
@@ -115,7 +114,7 @@ void afficherHUD(Niveau *niveau) {
     clearLineAt(y+2, x, w); gotoligcol(y+2, x);
     printf("Vies: ");
     color(ROUGE, NOIR);
-    for(int i=0; i<niveau->vies; i++) printf("<3 ");
+    for(int i=0; i<niveau->vies; i++) printf("❤️ ");
     color(BLANC, NOIR);
 
     clearLineAt(y+4, x, w); gotoligcol(y+4, x);
@@ -151,7 +150,7 @@ void afficherHUD(Niveau *niveau) {
 
     // --- Aide ---
     color(GRIS, NOIR);
-    gotoligcol(LIGNES+2, 2);
+    gotoligcol(LIGNES+5, 2);
     printf("[Fleches] Bouger | [ESPACE] Selection | [X] Quitter");
     color(BLANC, NOIR);
 }
