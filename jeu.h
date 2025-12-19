@@ -1,18 +1,29 @@
 #ifndef JEU_H
 #define JEU_H
 
-#include "affichage.h"
+#include "structure.h"
 
-// Prépare le niveau : remplit la grille avec des items aléatoires
-void initialiserNiveau(GameState *niveau, int numNiveau);
+// --- FONCTIONS DE BASE ---
 
-// Echange le contenu de deux cases -> des pointeurs
-void echangerCases(int *case1, int *case2);
+// Prépare le niveau : remplit la grille, lance le chrono, met le score à 0
+void initialiserNiveau(Niveau *niveau, int numNiveau);
 
-// Prototypes des items
-void itemBombe(GameState *niveau, int x, int y);
-void itemLigne(GameState *niveau, int ligne);
-void itemColonne(GameState *niveau, int colonne);
-void itemCouleur(GameState *niveau, int type);
+// Echange le contenu de deux cases (utilise des pointeurs de Case)
+void echangerCases(Case *case1, Case *case2);
+
+// --- FONCTIONS BONUS (ITEMS DE TON COLLEGUE) ---
+// Adaptées pour utiliser la structure 'Niveau'
+
+// Détruit une zone de 3x3 autour de la case (x,y)
+void itemBombe(Niveau *niveau, int x, int y);
+
+// Détruit toute la ligne indiquée
+void itemLigne(Niveau *niveau, int ligne);
+
+// Détruit toute la colonne indiquée
+void itemColonne(Niveau *niveau, int colonne);
+
+// Détruit toutes les cases d'une certaine couleur/type sur tout le plateau
+void itemCouleur(Niveau *niveau, int type);
 
 #endif
