@@ -40,7 +40,7 @@ void afficherVictoire(Niveau *niveau) {
         printf("Prochain niveau dans 3 secondes..."); // info joueur
     } else {
         // sinon c'est la fin du jeu complet
-        set_color(MAGENTA, BLACK); // texte magenta pour la fete
+        set_color(MAGENTA, BLACK); // texte magenta pour la victoire
         gotoxy(25, 15); // positionnement
         printf("FELICITATIONS ! JEU TERMINE !"); // message final
         gotoxy(25, 16); // ligne suivante
@@ -55,7 +55,7 @@ void afficherVictoire(Niveau *niveau) {
 void afficherDefaite(Niveau *niveau, char* raison) {
     clrscr(); // on efface l'ecran
     
-    set_color(RED, BLACK); // texte en rouge (danger)
+    set_color(RED, BLACK); // texte en rouge
     gotoxy(25, 8); // positionnement
     printf("============================="); // cadre
     gotoxy(25, 9); // ligne suivante
@@ -73,7 +73,7 @@ void afficherDefaite(Niveau *niveau, char* raison) {
     
     // on regarde s'il reste des vies
     if (niveau->vies > 1) {
-        set_color(YELLOW, BLACK); // texte jaune (espoir)
+        set_color(YELLOW, BLACK); // texte jaune
         gotoxy(25, 16); // positionnement
         printf("Il vous reste %d vies !", niveau->vies - 1); // vies restantes -1
         gotoxy(25, 17); // ligne suivante
@@ -243,7 +243,7 @@ int jouerNiveau(Niveau *monNiveau) {
                         gotoxy(2, LIGNES+4); 
                         set_color(GREEN, BLACK); // texte vert
                         printf(">> SAUVEGARDE REUSSIE ! A BIENTOT <<       "); // confirmation
-                        Sleep(1500); // petite pause
+                        Sleep(1500); // pause
                     }
                 }
                 else {
@@ -251,11 +251,11 @@ int jouerNiveau(Niveau *monNiveau) {
                     remove("sauvegarde.txt");
                 }
                 
-                resultat = -1; // code special pour quitter
+                resultat = -1;
                 jeuEnCours = 0; // on arrete la boucle
             }
         } 
-        Sleep(10); // petite pause pour soulager le processeur
+        Sleep(10); // petite pause
     } 
     return resultat; // on renvoie le resultat final
 }
@@ -285,7 +285,7 @@ int main() {
                 
                 // initialisation des variables de jeu
                 int niveauActuel = 1; // on commence niveau 1
-                int continuer = 1; // booleen pour continuer
+                int continuer = 1;
                 int scoreTotal = 0; // score global
                 int viesRestantes = 3; // 3 vies au depart
                 
@@ -340,7 +340,7 @@ int main() {
             case 3: // CAS 3 : QUITTER
                 clrscr(); // efface ecran
                 gotoxy(30, 10); // position
-                printf("Merci d'avoir joue ! A bientot."); // au revoir
+                printf("Merci d'avoir joue ! A bientot."); // fin
                 Sleep(1000); // petite pause
                 break; // fin du case 3
                 
