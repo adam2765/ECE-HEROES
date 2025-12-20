@@ -1,96 +1,111 @@
-#include <stdio.h>        // Pour FILE, fopen, fclose, fprintf, fscanf
-#include <time.h>         // Pour time(), difftime() (gestion du chrono)
-#include "sauvegarde.h"   // Contient le type Niveau + constantes (LIGNES, COLONNES, NB_TYPES)
+#include <stdio.h>        // Gestion des fichiers (FILE, fopen, fprintf, fscanf)
+#include <time.h>         // Gestion du temps (time, difftime)
+#include "sauvegarde.h"   // Structures du jeu (Niveau, grille, constantes)
 
-// Sauvegarde l'état de la partie dans un fichier texte
-// Retourne 1 si tout s'est bien passé, 0 sinon
 
-int sauvegarderPartie(Niveau *niveau) {                         // On reçoit l'adresse du niveau à sauvegarder
-    FILE *fichier = fopen("sauvegarde.txt", "w");              // On ouvre (ou crée) le fichier en écriture
-    if (fichier == NULL) return 0;                             // Si ouverture impossible -> échec direct
+// Sauvegarde l'état actuel de la partie
+// Renvoie 1 si tout se passe bien, 0 sinon
+int sauvegarderPartie(Niveau *niveau) {
 
-    // 1. Calcul du temps restant réel au moment de la sauvegarde
-   
-    int tempsEcoule = (int)difftime(time(NULL), niveau->startTime); // Temps passé depuis le début du niveau
-    int tempsRestant = niveau->tempsTotalSec - tempsEcoule;         // Temps restant = total - écoulé
-    if (tempsRestant < 0) tempsRestant = 0;                         // Si on dépasse, on évite les valeurs négatives
+    FILE *fichier = fopen("sauvegarde.txt", "w");   // On ouvre le fichier en écriture
+    if (fichier == NULL) return 0;                  // Si ouverture impossible, on arrête
 
-    // 2. Ecriture des variables simples
-    // On sauvegarde : Niveau, Vies, Score, Coups, TempsRestant
-   
-    fprintf(fichier, "%d %d %d %d %d\n",                       // On écrit tout sur une ligne pour relire facilement
-            niveau->numeroNiveau,                               // Numéro du niveau actuel
-            niveau->vies,                                       // Nombre de vies restantes
-            niveau->score,                                      // Score actuel
-            niveau->coupsRestants,                              // Coups restants
-            tempsRestant);                                      // On sauvegarde le temps RESTANT, pas le total initial
 
-    // 3. Ecriture du Pseudo (chaine de caractères)
-    // Astuce : Si le pseudo est vide, on écrit "Joueur"
-    if (niveau->pseudo[0] == '\0') fprintf(fichier, "Joueur\n"); // Si le pseudo n'a pas été rempli -> valeur par défaut
-    else fprintf(fichier, "%s\n", niveau->pseudo);               // Sinon on écrit le pseudo tel quel
+    // Calcul du temps écoulé depuis le début du niveau
+    int tempsEcoule = (int)difftime(time(NULL), niveau->startTime); // Temps passé
 
-    // 4. Ecriture du Contrat (Objectifs)
-    for (int k = 1; k <= NB_TYPES; k++) {                       // On parcourt tous les types d'items (1..NB_TYPES)
-        fprintf(fichier, "%d %d ",                              // Pour chaque type, on écrit 2 nombres
-                niveau->contrat.quantiteCible[k],               // Objectif à atteindre pour ce type
-                niveau->contrat.quantiteActuelle[k]);           // Progression actuelle (combien on en a déjà détruit)
+    // Calcul du temps restant réel
+    int tempsRestant = niveau->tempsTotalSec - tempsEcoule;         // Temps restant
+
+    // Sécurité : on évite d'avoir un temps négatif
+    if (tempsRestant < 0) tempsRestant = 0;
+
+
+    // Sauvegarde des informations principales du jeu
+    fprintf(fichier, "%d %d %d %d %d\n",   // Tout sur une ligne pour simplifier la lecture
+            niveau->numeroNiveau,          // Numéro du niveau
+            niveau->vies,                  // Nombre de vies restantes
+            niveau->score,                 // Score actuel
+            niveau->coupsRestants,         // Nombre de coups restants
+            tempsRestant);                 // Temps restant à jouer
+
+
+    // Sauvegarde du pseudo du joueur
+    if (niveau->pseudo[0] == '\0')         // Si le pseudo est vide
+        fprintf(fichier, "Joueur\n");      // On écrit un pseudo par défaut
+    else
+        fprintf(fichier, "%s\n", niveau->pseudo); // Sinon on écrit le vrai pseudo
+
+
+    // Sauvegarde du contrat (objectifs du niveau)
+    for (int k = 1; k <= NB_TYPES; k++) {  // Pour chaque type d'item
+        fprintf(fichier, "%d %d ",         // On écrit deux valeurs
+                niveau->contrat.quantiteCible[k],     // Objectif à atteindre
+                niveau->contrat.quantiteActuelle[k]); // Progression actuelle
     }
-    fprintf(fichier, "\n");                                     // Fin de ligne du contrat
+    fprintf(fichier, "\n");                // Fin de la ligne du contrat
 
-    // 5. Ecriture de la Grille
-    for(int i = 0; i < LIGNES; i++) {                           // On parcourt toutes les lignes de la grille
-        for(int j = 0; j < COLONNES; j++) {                     // Puis toutes les colonnes
-            // On écrit juste le type (pas besoin de savoir si c'est sélectionné)
-            fprintf(fichier, "%d ", niveau->grille[i][j].type); // On sauvegarde uniquement le type de l'item
+
+    // Sauvegarde de la grille de jeu
+    for (int i = 0; i < LIGNES; i++) {     // Parcours des lignes
+        for (int j = 0; j < COLONNES; j++) { // Parcours des colonnes
+            fprintf(fichier, "%d ",        // On écrit le type de l'item
+                    niveau->grille[i][j].type); // Pas besoin de sauver la sélection
         }
-        fprintf(fichier, "\n");                                 // Fin de ligne de la grille
+        fprintf(fichier, "\n");            // Retour à la ligne pour la grille
     }
 
-    fclose(fichier);                                            // On ferme le fichier (important pour valider l'écriture)
-    return 1;                                                   // Succès
+    fclose(fichier);                       // On ferme le fichier (important)
+    return 1;                              // Sauvegarde réussie
 }
 
-// Charge l'état de la partie depuis le fichier texte
-// Retourne 1 si chargé, 0 si pas de fichier / erreur
-int chargerPartie(Niveau *niveau) {                             // On reçoit l'adresse du niveau à remplir
-    FILE *fichier = fopen("sauvegarde.txt", "r");              // On ouvre le fichier en lecture
-    if (fichier == NULL) return 0;                             // Si le fichier n'existe pas -> pas de sauvegarde
 
-    int tempsRestantSauvegarde = 0;                            // Variable temporaire pour récupérer le temps restant
+// Charge une partie sauvegardée depuis le fichier
+// Renvoie 1 si succès, 0 s'il n'y a pas de sauvegarde
+int chargerPartie(Niveau *niveau) {
 
-    // 1. Lecture des variables simples
-    fscanf(fichier, "%d %d %d %d %d",                          // On relit exactement dans le même ordre qu'on a écrit
-           &niveau->numeroNiveau,                               // On remplit numeroNiveau
-           &niveau->vies,                                       // On remplit vies
-           &niveau->score,                                      // On remplit score
-           &niveau->coupsRestants,                              // On remplit coupsRestants
-           &tempsRestantSauvegarde);                            // On récupère le temps restant sauvegardé
+    FILE *fichier = fopen("sauvegarde.txt", "r"); // Ouverture du fichier en lecture
+    if (fichier == NULL) return 0;                 // Si pas de fichier, on arrête
+
+    int tempsRestantSauvegarde = 0;                // Variable temporaire pour le temps
+
+
+    // Lecture des informations principales
+    fscanf(fichier, "%d %d %d %d %d",  // Lecture dans le même ordre que la sauvegarde
+           &niveau->numeroNiveau,      // Numéro du niveau
+           &niveau->vies,              // Vies restantes
+           &niveau->score,             // Score
+           &niveau->coupsRestants,     // Coups restants
+           &tempsRestantSauvegarde);   // Temps restant sauvegardé
+
 
     // Réinitialisation du chrono
-    niveau->tempsTotalSec = tempsRestantSauvegarde;            // On considère que "temps total" devient le temps restant
-    niveau->startTime = time(NULL);                            // On relance le chrono à partir de maintenant
+    niveau->tempsTotalSec = tempsRestantSauvegarde; // Le temps restant devient le nouveau total
+    niveau->startTime = time(NULL);                 // Le chrono repart à maintenant
 
-    // 2. Lecture du Pseudo
-    fscanf(fichier, "%s", niveau->pseudo);                     // Lit un mot (sans espaces) dans pseudo
 
-    // 3. Lecture du Contrat
-    for (int k = 1; k <= NB_TYPES; k++) {                      // Pour chaque type d'item
-        fscanf(fichier, "%d %d",                               // On relit les 2 valeurs comme à la sauvegarde
-               &niveau->contrat.quantiteCible[k],              // Objectif
-               &niveau->contrat.quantiteActuelle[k]);          // Avancement
+    // Lecture du pseudo
+    fscanf(fichier, "%s", niveau->pseudo);          // On recharge le pseudo
+
+
+    // Lecture du contrat
+    for (int k = 1; k <= NB_TYPES; k++) {            // Pour chaque type d'item
+        fscanf(fichier, "%d %d",                     // On lit les deux valeurs
+               &niveau->contrat.quantiteCible[k],    // Objectif
+               &niveau->contrat.quantiteActuelle[k]); // Progression
     }
 
-    // 4. Lecture de la Grille
-    for(int i = 0; i < LIGNES; i++) {                          // On parcourt la grille
-        for(int j = 0; j < COLONNES; j++) {
-            int typeLu;                                        // Variable temporaire pour lire le type
-            fscanf(fichier, "%d", &typeLu);                    // On lit un entier depuis le fichier
-            niveau->grille[i][j].type = typeLu;                // On le met dans la case correspondante
-            niveau->grille[i][j].estSelectionne = 0;           // On remet à zéro la sélection (pas utile en sauvegarde)
+
+    // Lecture de la grille
+    for (int i = 0; i < LIGNES; i++) {               // Parcours des lignes
+        for (int j = 0; j < COLONNES; j++) {         // Parcours des colonnes
+            int typeLu;                              // Variable temporaire
+            fscanf(fichier, "%d", &typeLu);          // Lecture du type
+            niveau->grille[i][j].type = typeLu;      // Affectation dans la grille
+            niveau->grille[i][j].estSelectionne = 0; // On enlève toute sélection
         }
     }
 
-    fclose(fichier);                                           // On ferme le fichier
-    return 1;                                                  // Succès
+    fclose(fichier);                                 // Fermeture du fichier
+    return 1;                                        // Chargement réussi
 }
