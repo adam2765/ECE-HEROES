@@ -352,3 +352,15 @@ void gererCombos(Niveau *niveau) {
         }
     } while (combo); 
 }
+// --- VERIFICATION VICTOIRE ---
+
+// Vérifie si tous les objectifs du contrat sont atteints
+int verifierContrat(Niveau *niveau) {
+    for (int k = 1; k <= NB_TYPES; k++) {
+        // Si un objectif n'est pas atteint → pas encore gagné
+        if (niveau->contrat.quantiteActuelle[k] < niveau->contrat.quantiteCible[k]) {
+            return 0;
+        }
+    }
+    return 1; // Tous les objectifs OK → VICTOIRE
+}

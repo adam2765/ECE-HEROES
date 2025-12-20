@@ -38,4 +38,10 @@ void faireTomberEtRemplir(Niveau *niveau);
 // 3. Fonction Mère : Enchaine détection et gravité tant qu'il y a des combos
 void gererCombos(Niveau *niveau);
 
+// --- VERIFICATION VICTOIRE ---
+
+// Vérifie si tous les objectifs du contrat sont atteints
+// Retourne 1 si victoire, 0 sinon
+int verifierContrat(Niveau *niveau);
+
 #endif

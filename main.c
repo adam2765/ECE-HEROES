@@ -3,27 +3,114 @@
 #include <conio.h>  // Pour _getch() et _kbhit()
 #include <windows.h> // Pour Sleep()
 #include <math.h>    // Pour abs() (calcul de distance)
+#include <string.h>  // Pour memset()
 
 // On inclut tous nos fichiers
-#include "structure.h" // Attention, vérifie si c'est structure.h ou structures.h (avec un s) dans ton dossier
+#include "structure.h"
 #include "jeu.h"
 #include "affichage.h"
 #include "sauvegarde.h"
 
+// ============== ECRANS VICTOIRE / DEFAITE ==============
 
+// Affiche l'écran de victoire après un niveau réussi
+void afficherVictoire(Niveau *niveau) {
+    system("cls");
+    
+    color(VERT, NOIR);
+    gotoligcol(8, 25);
+    printf("=============================");
+    gotoligcol(9, 25);
+    printf("     NIVEAU %d TERMINE !     ", niveau->numeroNiveau);
+    gotoligcol(10, 25);
+    printf("=============================");
+    
+    color(BLANC, NOIR);
+    gotoligcol(12, 25);
+    printf("Score : %d", niveau->score);
+    gotoligcol(13, 25);
+    printf("Vies restantes : %d", niveau->vies);
+    
+    if (niveau->numeroNiveau < 3) {
+        color(JAUNE, NOIR);
+        gotoligcol(15, 25);
+        printf("Prochain niveau dans 3 secondes...");
+    } else {
+        color(MAGENTA, NOIR);
+        gotoligcol(15, 25);
+        printf("FELICITATIONS ! JEU TERMINE !");
+        gotoligcol(16, 25);
+        printf("Score final : %d", niveau->score);
+    }
+    
+    color(BLANC, NOIR);
+    Sleep(3000);
+}
+
+// Affiche l'écran de défaite (plus de coups ou temps écoulé)
+void afficherDefaite(Niveau *niveau, char* raison) {
+    system("cls");
+    
+    color(ROUGE, NOIR);
+    gotoligcol(8, 25);
+    printf("=============================");
+    gotoligcol(9, 25);
+    printf("         GAME OVER !         ");
+    gotoligcol(10, 25);
+    printf("=============================");
+    
+    color(BLANC, NOIR);
+    gotoligcol(12, 25);
+    printf("Raison : %s", raison);
+    gotoligcol(13, 25);
+    printf("Score : %d", niveau->score);
+    gotoligcol(14, 25);
+    printf("Niveau : %d", niveau->numeroNiveau);
+    
+    if (niveau->vies > 1) {
+        color(JAUNE, NOIR);
+        gotoligcol(16, 25);
+        printf("Il vous reste %d vies !", niveau->vies - 1);
+        gotoligcol(17, 25);
+        printf("Appuyez sur une touche pour reessayer...");
+    } else {
+        color(ROUGE, NOIR);
+        gotoligcol(16, 25);
+        printf("Plus de vies ! Retour au menu...");
+    }
+    
+    color(BLANC, NOIR);
+    Sleep(2000);
+    if (niveau->vies > 1) _getch();
+}
+
+// ============== FIN ECRANS ==============
 
 // --- FONCTION CŒUR DU JEU : La boucle de la partie ---
-void jouerNiveau(Niveau *monNiveau) {
+// Retourne : 1 (victoire), 0 (défaite), -1 (quitter)
+int jouerNiveau(Niveau *monNiveau) {
     int curseurX = 0;
     int curseurY = 0;
     int jeuEnCours = 1;
     int codeTouche;
+    int resultat = 0; // 0 = défaite par défaut
 
     // On affiche le cadre statique une seule fois
     afficherCadre();
 
+    // Sauvegarde le score et les vies (pour les garder entre niveaux)
+    int scoreAvant = monNiveau->score;
+    int viesAvant = monNiveau->vies;
+
     // Au lancement, on nettoie les combos existants
     gererCombos(monNiveau);
+    
+    // Reset des objectifs après gererCombos (les combos auto comptent pas)
+    for (int k = 0; k <= NB_TYPES; k++) {
+        monNiveau->contrat.quantiteActuelle[k] = 0;
+    }
+    monNiveau->score = scoreAvant;
+    monNiveau->vies = viesAvant;
 
     // BOUCLE INFINIE
     while(jeuEnCours) {
@@ -32,27 +119,31 @@ void jouerNiveau(Niveau *monNiveau) {
         afficherGrille(monNiveau, curseurX, curseurY);
         afficherHUD(monNiveau);
 
-        // 2. VERIFICATION DEFAITE
-        if (monNiveau->coupsRestants <= 0) {
-            gotoligcol(LIGNES/2, COLONNES + 5);
-            color(ROUGE, NOIR);
-            printf("GAME OVER ! Plus de coups...");
-            Sleep(3000);
+        // 2. VERIFICATION VICTOIRE
+        if (verifierContrat(monNiveau)) {
+            afficherVictoire(monNiveau);
+            resultat = 1; // Victoire
             jeuEnCours = 0;
             break;
         }
 
-        // 3. GESTION DU TEMPS
-        if (difftime(time(NULL), monNiveau->startTime) > monNiveau->tempsTotalSec) {
-             gotoligcol(LIGNES/2, COLONNES + 5);
-             color(ROUGE, NOIR);
-             printf("TEMPS ECOULE !");
-             Sleep(3000);
-             jeuEnCours = 0;
-             break;
+        // 3. VERIFICATION DEFAITE (Plus de coups)
+        if (monNiveau->coupsRestants <= 0) {
+            afficherDefaite(monNiveau, "Plus de coups !");
+            resultat = 0;
+            jeuEnCours = 0;
+            break;
         }
 
-        // 4. GESTION CLAVIER
+        // 4. GESTION DU TEMPS
+        if (difftime(time(NULL), monNiveau->startTime) > monNiveau->tempsTotalSec) {
+            afficherDefaite(monNiveau, "Temps ecoule !");
+            resultat = 0;
+            jeuEnCours = 0;
+            break;
+        }
+
+        // 5. GESTION CLAVIER
         if (_kbhit()) { 
             codeTouche = _getch();
 
@@ -102,7 +193,7 @@ void jouerNiveau(Niveau *monNiveau) {
                             monNiveau->grille[yPrecedent][xPrecedent].estSelectionne = 0;
                             monNiveau->grille[curseurY][curseurX].estSelectionne = 0;
 
-                            // 3. LE TEST CRUCIAL : Est-ce que ça aligne 3 bonbons ?
+                            // 3. LE TEST CRUCIAL : Est-ce que ça aligne 3 fruits ?
                             if (detecterEtSupprimerAlignements(monNiveau)) {
                                 // OUI ! C'est un bon coup
                                 monNiveau->coupsRestants--; 
@@ -146,16 +237,23 @@ void jouerNiveau(Niveau *monNiveau) {
                         Sleep(1500); 
                     }
                 }
+                else {
+                    // Supprime la sauvegarde si on quitte sans sauvegarder
+                    remove("sauvegarde.txt");
+                }
                 
-                jeuEnCours = 0; // On arrête la boucle
+                resultat = -1;
+                jeuEnCours = 0;
             }
         } // Fin du if(_kbhit)
 
         // Petite pause CPU (Important !)
         Sleep(10);
 
-    } // Fin du while(jeuEnCours) <--- C'ETAIT ICI QU'IL MANQUAIT L'ACCOLADE
-} // Fin de la fonction jouerNiveau <--- ET ICI
+    } // Fin du while(jeuEnCours)
+    
+    return resultat;
+}
 
 // --- PROGRAMME PRINCIPAL (MAIN) ---
 int main() {
@@ -173,15 +271,54 @@ int main() {
 
         switch (choixMenu) {
             case 1: // NOUVELLE PARTIE
-                initialiserNiveau(&monNiveau, 1);
+            {
+                // Reset complet avant de commencer
+                memset(&monNiveau, 0, sizeof(Niveau));
                 
                 system("cls");
                 gotoligcol(10, 30);
                 printf("Entrez votre pseudo : ");
-                scanf("%s", monNiveau.pseudo); 
+                scanf("%s", monNiveau.pseudo);
                 
-                jouerNiveau(&monNiveau);
-                break;
+                // ============== BOUCLE DES 3 NIVEAUX ==============
+                int niveauActuel = 1;
+                int continuer = 1;
+                int scoreTotal = 0;
+                int viesRestantes = 3;
+                
+                while (niveauActuel <= 3 && continuer) {
+                    // Initialise le niveau
+                    initialiserNiveau(&monNiveau, niveauActuel);
+                    monNiveau.score = scoreTotal;
+                    monNiveau.vies = viesRestantes;
+                    
+                    // Joue le niveau
+                    int resultat = jouerNiveau(&monNiveau);
+                    
+                    if (resultat == 1) {
+                        // Victoire → niveau suivant
+                        scoreTotal = monNiveau.score;
+                        viesRestantes = monNiveau.vies;
+                        niveauActuel++;
+                    } 
+                    else if (resultat == 0) {
+                        // Défaite → perd une vie
+                        viesRestantes--;
+                        
+                        if (viesRestantes <= 0) {
+                            // Plus de vies → fin de partie
+                            continuer = 0;
+                        }
+                        // Sinon on rejoue le même niveau
+                    }
+                    else {
+                        // Quitter (-1)
+                        continuer = 0;
+                    }
+                }
+                // ============== FIN BOUCLE NIVEAUX ==============
+            }
+            break;
 
             case 2: // CHARGER PARTIE
                 system("cls");
@@ -207,6 +344,46 @@ int main() {
                 gotoligcol(10, 30);
                 printf("Merci d'avoir joue ! A bientot.");
                 Sleep(1000);
+                break;
+            case 4: // REGLES DU JEU (NOUVEAU)
+                system("cls");
+                color(CYAN, NOIR);
+                gotoligcol(2, 30);
+                printf("=== REGLES DU JEU ===");
+                
+                color(BLANC, NOIR);
+                gotoligcol(4, 5);
+                printf("BUT : Aligner 3 fruits ou plus pour les detruire et remplir le contrat.");
+                
+                gotoligcol(6, 5);
+                printf("COMMANDES :");
+                gotoligcol(7, 10);
+                printf("- Fleches : Deplacer le curseur");
+                gotoligcol(8, 10);
+                printf("- Espace : Selectionner / Echanger");
+                gotoligcol(9, 10);
+                printf("- X : Quitter / Sauvegarder");
+                
+                gotoligcol(11, 5);
+                printf("FIGURES SPECIALES :");
+                gotoligcol(12, 10);
+                printf("- 6 alignes : Supprime tous les fruits de cette couleur");
+                gotoligcol(13, 10);
+                printf("- Croix de 9 : Supprime la ligne et la colonne");
+                gotoligcol(14, 10);
+                printf("- Carre 4x4 : Supprime le carre entier");
+                gotoligcol(15, 10);
+                printf("- 5 alignes (niveau 2+) : Bombe 3x3");
+                
+                gotoligcol(17, 5);
+                printf("OBJECTIF : Remplir le contrat avant la fin du temps ou des coups !");
+                
+                color(JAUNE, NOIR);
+                gotoligcol(20, 25);
+                printf("Appuyez sur une touche pour revenir...");
+                
+                color(BLANC, NOIR);
+                _getch();
                 break;
         }
 

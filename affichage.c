@@ -245,14 +245,22 @@ int afficherMenuPrincipal(void) {
 
     // Séparateur
     gotoligcol(y++, x_menu); printf("|   --------------------   |");
-
-    // Option 3
+     // Option 3
     gotoligcol(y, x_menu);   printf("|   ");
     color(ROUGE, NOIR);      printf("[3] QUITTER");
     color(GRIS, NOIR);       printf("            |");
     y++;
 
-    // Bas de la boîte
+    // Séparateur
+    gotoligcol(y++, x_menu); printf("|   --------------------   |");
+
+    // Option 4 (NOUVEAU)
+    gotoligcol(y, x_menu);   printf("|   ");
+    color(CYAN, NOIR);       printf("[4] REGLES DU JEU");
+    color(GRIS, NOIR);       printf("      |");
+    y++;
+
+    // Bas de la boîte (UNE SEULE FOIS, À LA FIN)
     gotoligcol(y++, x_menu); printf("|__________________________|");
 
     // --- 5. FOOTER / CREDITS ---
@@ -266,11 +274,11 @@ int afficherMenuPrincipal(void) {
     printf("Votre choix > ");
     color(BLANC, NOIR);
 
-    // Lecture sécurisée
+    // Lecture sécurisée (MODIFIÉ : 4 au lieu de 3)
     char choix;
     do {
         choix = _getch();
-    } while (choix < '1' || choix > '3');
+    } while (choix < '1' || choix > '4');  // ← ICI
 
     return choix - '0';
 }
