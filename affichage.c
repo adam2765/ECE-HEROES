@@ -1,34 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h> 
 #include <time.h>
 #include <conio.h>
 #include "affichage.h"
+#include "affichage_console.h" // Bibliothèque du prof
 
-static HANDLE gH; // Handle de la console
-
-/* --- OUTILS TECHNIQUES --- */
-
-void initConsole(void) {
-    gH = GetStdHandle(STD_OUTPUT_HANDLE);
-    // Cache le curseur clignotant moche
-    CONSOLE_CURSOR_INFO info = {100, FALSE}; 
-    SetConsoleCursorInfo(gH, &info);
-}
-
-void color(int t, int f) {
-    SetConsoleTextAttribute(gH, (WORD)(f * 16 + t));
-}
-
-void gotoligcol(int y, int x) {
-    COORD c = {(SHORT)x, (SHORT)y};
-    SetConsoleCursorPosition(gH, c);
-}
-
-void clearLineAt(int y, int x, int w) {
-    gotoligcol(y, x);
-    for (int i = 0; i < w; i++) putchar(' ');
-}
+/* --- OUTILS INTERNES --- */
 
 int tempsRestantSec(Niveau *niveau) {
     int ecoule = (int)difftime(time(NULL), niveau->startTime);
@@ -36,114 +13,100 @@ int tempsRestantSec(Niveau *niveau) {
     return (r < 0) ? 0 : r;
 }
 
+// Fonction pour nettoyer une zone précise (remplace ton ancien clearLineAt)
+void nettoyerZone(int lig, int col, int largeur) {
+    gotoxy(col, lig); // Attention : X d'abord, Y ensuite
+    for (int i = 0; i < largeur; i++) printf(" ");
+}
+
 /* --- FONCTIONS PRINCIPALES --- */
 
 void afficherCadre(void) {
-    system("cls"); // On nettoie l'ecran
-    color(BLANC, NOIR);
+    clrscr(); // Fonction du prof
+    set_color(WHITE, BLACK);
 
-    int largeurCadre = 60; // ON FORCE UNE LARGEUR FIXE (Suffisant pour les emojis)
+    int largeurCadre = 60; 
 
     // --- Ligne du Haut ---
-    gotoligcol(0, 0);
+    gotoxy(0, 0);
     printf("|");
     for (int i = 0; i < largeurCadre; i++) printf("-");
     printf("|");
 
     // --- Bords GAUCHE et DROITE ---
     for (int i = 0; i < LIGNES; i++) {
-        gotoligcol(i + 1, 0);              printf("|"); // Bord Gauche
-        gotoligcol(i + 1, largeurCadre+1); printf("|"); // Bord Droit (Fixe)
+        gotoxy(0, i + 1);              printf("|"); // Bord Gauche
+        gotoxy(largeurCadre + 1, i + 1); printf("|"); // Bord Droit
     }
 
     // --- Ligne du Bas ---
-    gotoligcol(LIGNES + 1, 0);
+    gotoxy(0, LIGNES + 1);
     printf("|");
     for (int i = 0; i < largeurCadre; i++) printf("-");
     printf("|");
 }
 
 void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
-    // 1. LES FRUITS (Emojis)
-    // Index: 0=Vide, 1=Rouge, 2=Bleu, 3=Vert, 4=Jaune, 5=Magenta
-    // Note : On met des guillemets doubles " "
+    // 1. LES FRUITS
     char *sym[] = {"  ", "🍉", "🫐", "🥝", "🍋", "🍑", ""}; 
     
-    // 2. COULEURS DE FOND UNIQUEMENT
-    
+    // 2. PARCOURS
     for (int i = 0; i < LIGNES; i++) {
-        gotoligcol(i + 1, 2); // On se place
+        gotoxy(2, i + 1); // X=2, Y=i+1
         
         for (int j = 0; j < COLONNES; j++) {
             
             int type = niveau->grille[i][j].type;
             if (type > NB_TYPES) type = 0;
 
-            int bg = NOIR;      // Fond par défaut
+            int bg = BLACK;      // Fond par défaut
 
             // --- GESTION CURSEUR & SELECTION ---
             if (i == curseurY && j == curseurX) {
-                // Curseur blanc sur la case actuelle
-                bg = BLANC; 
+                bg = WHITE; 
             }
             else if (niveau->grille[i][j].estSelectionne) {
-                // Fond Rouge si on a cliqué (sélectionné)
-                bg = ROUGE; 
+                bg = RED; 
             }
 
-            // On applique la couleur (le texte reste blanc, le fond change)
-            color(BLANC, bg);
-            
-            // AFFICHE L'EMOJI
-            // %s car c'est une chaîne de caractères (UTF-8)
-            // On met un espace avant/après pour aérer la grille
+            set_color(WHITE, bg);
             printf(" %s ", sym[type]); 
         }
     }
-    color(BLANC, NOIR); // On remet normal à la fin
+    set_color(WHITE, BLACK);
 }
-
-// --- CORRECTION : J'AI SORTI LA FONCTION D'ICI ---
-// Petite fonction locale pour effacer proprement avant d'écrire
-void effacerZone(int lig, int col){
-    gotoligcol(lig, col);
-    printf("                               "); // 30 espaces vides
-    gotoligcol(lig, col); // On revient pour écrire
-}
-// -------------------------------------------------
 
 void afficherHUD(Niveau *niveau) {
-    // ON FORCE LA POSITION X A 65 (Loin à droite)
-    int x = 65; 
-    
+    int x = 65; // Ta position fixe
     int y = 2;
-    int w = 40; // Largeur pour effacer les vieilles lignes
+    int w = 40; // Largeur effacement
     int t = tempsRestantSec(niveau);
 
     // --- Stats ---
-    // A chaque fois, on efface la zone (clearLineAt) avant d'écrire
-    clearLineAt(y, x, w); gotoligcol(y, x);
+    nettoyerZone(y, x, w); gotoxy(x, y);
     printf("NIVEAU %d", niveau->numeroNiveau);
 
-    clearLineAt(y+2, x, w); gotoligcol(y+2, x);
+    nettoyerZone(y+2, x, w); gotoxy(x, y);
     printf("Vies: ");
-    color(ROUGE, NOIR);
+    set_color(RED, BLACK);
     for(int i=0; i<niveau->vies; i++) printf("♥ ");
-    color(BLANC, NOIR);
+    set_color(WHITE, BLACK);
 
-    clearLineAt(y+4, x, w); gotoligcol(y+4, x);
+    nettoyerZone(y+4, x, w); gotoxy(x, y);
     printf("Score: %d", niveau->score);
 
-    clearLineAt(y+5, x, w); gotoligcol(y+5, x);
+    nettoyerZone(y+5, x, w); gotoxy(x, y);
     printf("Coups: %d", niveau->coupsRestants);
 
-    clearLineAt(y+7, x, w); gotoligcol(y+7, x);
-    color((t<30)?ROUGE:BLANC, NOIR);
+    nettoyerZone(y+7, x, w); gotoxy(x, y);
+    if (t < 30) set_color(RED, BLACK);
+    else set_color(WHITE, BLACK);
+    
     printf("Temps: %02d:%02d", t/60, t%60);
-    color(BLANC, NOIR);
+    set_color(WHITE, BLACK);
 
     // --- Objectifs ---
-    clearLineAt(y+9, x, w); gotoligcol(y+9, x);
+    nettoyerZone(y+9, x, w); gotoxy(x, y+9);
     printf("OBJECTIFS :");
     
     int ligne = y + 10;
@@ -152,133 +115,126 @@ void afficherHUD(Niveau *niveau) {
             int fait = niveau->contrat.quantiteActuelle[k];
             int total = niveau->contrat.quantiteCible[k];
             
-            clearLineAt(ligne, x, w); gotoligcol(ligne, x);
+            nettoyerZone(ligne, x, w); gotoxy(x, ligne);
             
-            if (fait >= total) color(VERT, NOIR);
-            else color(BLANC, NOIR);
+            if (fait >= total) set_color(GREEN, BLACK);
+            else set_color(WHITE, BLACK);
             
-            // On affiche juste "Item X" pour que ce soit court et propre
             printf("- Item %d : %d/%d", k, fait, total);
             ligne++;
         }
     }
 
-    // --- Aide (Tout en bas, alignée à gauche pour faire propre) ---
-    color(GRIS, NOIR);
-    gotoligcol(LIGNES + 4, 2); 
+    // --- Aide ---
+    set_color(DARKGRAY, BLACK);
+    gotoxy(2, LIGNES + 4); 
     printf("[Fleches] Bouger | [ESPACE] Selection | [S] Sauver | [X] Quitter");
-    color(BLANC, NOIR);
+    set_color(WHITE, BLACK);
 }
 
 /* =========================================================
-   PARTIE MENU : DESIGN "PRO" ECE HEROES
+   PARTIE MENU
    ========================================================= */
 
 int afficherMenuPrincipal(void) {
-    system("cls"); // Nettoyage écran
+    clrscr(); 
 
-    // Dimensions approximatives de la console (pour le centrage)
-    int width = 80;  // Largeur standard
-    int height = 25; // Hauteur standard
+    int width = 80;
+    int height = 25;
     
-    // --- 1. LE CADRE "CANDY" (Double bordure colorée) ---
-    // On dessine un cadre autour de l'écran avec des couleurs alternées
+    // --- CADRE ---
     for (int i = 0; i < width; i++) {
-        color((i % 5) + 9, NOIR); // Couleurs vives (9-14)
-        gotoligcol(0, i); printf("=");
-        gotoligcol(height-1, i); printf("=");
+        set_color((i % 5) + 9, BLACK);
+        gotoxy(i, 0); printf("=");
+        gotoxy(i, height-1); printf("=");
     }
     for (int i = 0; i < height; i++) {
-        color((i % 5) + 9, NOIR);
-        gotoligcol(i, 0); printf("|");
-        gotoligcol(i, width-1); printf("|");
+        set_color((i % 5) + 9, BLACK);
+        gotoxy(0, i); printf("|");
+        gotoxy(width-1, i); printf("|");
     }
 
-    // --- 2. LE TITRE "ECE" (Gros et Centré) ---
+    // --- TITRE ---
     int y = 3;
-    int x_titre = (width - 44) / 2; // Calcul savant pour centrer (44 est la largeur du texte)
+    int x_titre = (width - 44) / 2; 
 
-    color(MAGENTA, NOIR);
-    gotoligcol(y++, x_titre); printf("  ______   ______   ______ ");
-    gotoligcol(y++, x_titre); printf(" |  ____| /  ____| |  ____|");
-    gotoligcol(y++, x_titre); printf(" | |__    | |      | |__   ");
-    gotoligcol(y++, x_titre); printf(" |  __|   | |      |  __|  ");
-    gotoligcol(y++, x_titre); printf(" | |____  | |____  | |____ ");
-    gotoligcol(y++, x_titre); printf(" |______| \\______| |______|");
+    set_color(MAGENTA, BLACK);
+    gotoxy(x_titre, y++); printf("  ______   ______   ______ ");
+    gotoxy(x_titre, y++); printf(" |  ____| /  ____| |  ____|");
+    gotoxy(x_titre, y++); printf(" | |__    | |      | |__   ");
+    gotoxy(x_titre, y++); printf(" |  __|   | |      |  __|  ");
+    gotoxy(x_titre, y++); printf(" | |____  | |____  | |____ ");
+    gotoxy(x_titre, y++); printf(" |______| \\______| |______|");
 
-    // --- 3. LE SOUS-TITRE "HEROES" (Juste en dessous) ---
-    y++; // Petit espace
-    color(CYAN, NOIR); // Changement de couleur
-    // Le mot HEROES est un peu plus large (environ 50 chars)
+    y++; 
+    set_color(CYAN, BLACK); 
     x_titre = (width - 50) / 2; 
 
-    gotoligcol(y++, x_titre); printf(" _    _  ______  _____   ____   ______   _____ ");
-    gotoligcol(y++, x_titre); printf("| |  | ||  ____||  __ \\ / __ \\ |  ____| / ____|");
-    gotoligcol(y++, x_titre); printf("| |__| || |__   | |__) || |  | || |__   | (___  ");
-    gotoligcol(y++, x_titre); printf("|  __  ||  __|  |  _  / | |  | ||  __|   \\___ \\ ");
-    gotoligcol(y++, x_titre); printf("| |  | || |____ | | \\ \\ | |__| || |____  ____) |");
-    gotoligcol(y++, x_titre); printf("|_|  |_||______||_|  \\_\\ \\____/ |______| |_____/ ");
+    gotoxy(x_titre, y++); printf(" _    _  ______  _____   ____   ______   _____ ");
+    gotoxy(x_titre, y++); printf("| |  | ||  ____||  __ \\ / __ \\ |  ____| / ____|");
+    gotoxy(x_titre, y++); printf("| |__| || |__   | |__) || |  | || |__   | (___  ");
+    gotoxy(x_titre, y++); printf("|  __  ||  __|  |  _  / | |  | ||  __|   \\___ \\ ");
+    gotoxy(x_titre, y++); printf("| |  | || |____ | | \\ \\ | |__| || |____  ____) |");
+    gotoxy(x_titre, y++); printf("|_|  |_||______||_|  \\_\\ \\____/ |______| |_____/ ");
 
-    // --- 4. LE MENU SELECTEUR (Style "Boîte") ---
-    y += 3; // On descend
-    int x_menu = (width - 30) / 2; // Centrage du bloc menu
+    // --- MENU ---
+    y += 3; 
+    int x_menu = (width - 30) / 2; 
 
-    // Haut de la boîte
-    color(GRIS, NOIR);
-    gotoligcol(y++, x_menu); printf(".__________________________.");
+    set_color(DARKGRAY, BLACK);
+    gotoxy(x_menu, y++); printf(".__________________________.");
 
     // Option 1
-    gotoligcol(y++, x_menu); printf("|                          |");
-    gotoligcol(y, x_menu);   printf("|   ");
-    color(VERT, NOIR);       printf("[1] NOUVELLE PARTIE");
-    color(GRIS, NOIR);       printf("    |");
+    gotoxy(x_menu, y++); printf("|                          |");
+    gotoxy(x_menu, y);   printf("|   ");
+    set_color(GREEN, BLACK);       printf("[1] NOUVELLE PARTIE");
+    set_color(DARKGRAY, BLACK);       printf("    |");
     y++;
 
     // Séparateur
-    gotoligcol(y++, x_menu); printf("|   --------------------   |");
+    gotoxy(x_menu, y++); printf("|   --------------------   |");
 
     // Option 2
-    gotoligcol(y, x_menu);   printf("|   ");
-    color(JAUNE, NOIR);      printf("[2] CHARGER PARTIE");
-    color(GRIS, NOIR);       printf("     |");
+    gotoxy(x_menu, y);   printf("|   ");
+    set_color(YELLOW, BLACK);      printf("[2] CHARGER PARTIE");
+    set_color(DARKGRAY, BLACK);       printf("     |");
     y++;
 
     // Séparateur
-    gotoligcol(y++, x_menu); printf("|   --------------------   |");
-     // Option 3
-    gotoligcol(y, x_menu);   printf("|   ");
-    color(ROUGE, NOIR);      printf("[3] QUITTER");
-    color(GRIS, NOIR);       printf("            |");
+    gotoxy(x_menu, y++); printf("|   --------------------   |");
+     
+    // Option 3
+    gotoxy(x_menu, y);   printf("|   ");
+    set_color(RED, BLACK);      printf("[3] QUITTER");
+    set_color(DARKGRAY, BLACK);       printf("            |");
     y++;
 
     // Séparateur
-    gotoligcol(y++, x_menu); printf("|   --------------------   |");
+    gotoxy(x_menu, y++); printf("|   --------------------   |");
 
-    // Option 4 (NOUVEAU)
-    gotoligcol(y, x_menu);   printf("|   ");
-    color(CYAN, NOIR);       printf("[4] REGLES DU JEU");
-    color(GRIS, NOIR);       printf("      |");
+    // Option 4
+    gotoxy(x_menu, y);   printf("|   ");
+    set_color(CYAN, BLACK);      printf("[4] REGLES DU JEU");
+    set_color(DARKGRAY, BLACK);       printf("      |");
     y++;
 
-    // Bas de la boîte (UNE SEULE FOIS, À LA FIN)
-    gotoligcol(y++, x_menu); printf("|__________________________|");
+    gotoxy(x_menu, y++); printf("|__________________________|");
 
-    // --- 5. FOOTER / CREDITS ---
-    color(BLANC, NOIR);
-    gotoligcol(height - 3, (width - 25) / 2);
+    // --- FOOTER ---
+    set_color(WHITE, BLACK);
+    gotoxy((width - 25) / 2, height - 3);
     printf("Projet C - ECE Paris 2025");
 
-    // --- 6. INPUT ---
-    gotoligcol(y + 1, x_menu + 5);
-    color(MAGENTA, NOIR);
+    // --- INPUT ---
+    gotoxy(x_menu + 5, y + 1);
+    set_color(MAGENTA, BLACK);
     printf("Votre choix > ");
-    color(BLANC, NOIR);
+    set_color(WHITE, BLACK);
 
-    // Lecture sécurisée (MODIFIÉ : 4 au lieu de 3)
     char choix;
     do {
         choix = _getch();
-    } while (choix < '1' || choix > '4');  // ← ICI
+    } while (choix < '1' || choix > '4');
 
     return choix - '0';
 }
