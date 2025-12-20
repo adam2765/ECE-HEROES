@@ -1,6 +1,6 @@
-#include <stdio.h>        // Gestion des fichiers (FILE, fopen, fprintf, fscanf)
-#include <time.h>         // Gestion du temps (time, difftime)
-#include "sauvegarde.h"   // Structures du jeu (Niveau, grille, constantes)
+#include <stdio.h>        
+#include <time.h>         // Gestion du temps
+#include "sauvegarde.h"   // Structures du jeu 
 
 
 // Sauvegarde l'état actuel de la partie
