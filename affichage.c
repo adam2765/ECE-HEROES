@@ -3,29 +3,34 @@
 #include <time.h>
 #include <conio.h>
 #include "affichage.h"
-#include "affichage_console.h" // Bibliothèque du prof
+#include "affichage_console.h" // la bibliothèque du cours
 
 /* --- OUTILS INTERNES --- */
 
+// calcule combien de temps il reste
 int tempsRestantSec(Niveau *niveau) {
+    // difference entre maintenant et le debut
     int ecoule = (int)difftime(time(NULL), niveau->startTime);
     int r = niveau->tempsTotalSec - ecoule;
+    // si c'est negatif on renvoie 0
     return (r < 0) ? 0 : r;
 }
 
-// Fonction pour nettoyer une zone précise (remplace ton ancien clearLineAt)
+// fonction pour effacer juste une zone de texte
 void nettoyerZone(int lig, int col, int largeur) {
-    gotoxy(col, lig); // Attention : X d'abord, Y ensuite
+    gotoxy(col, lig); // on va a la position
+    // on ecrit des espaces pour effacer
     for (int i = 0; i < largeur; i++) printf(" ");
 }
 
 /* --- FONCTIONS PRINCIPALES --- */
 
+// affiche le grand cadre autour du jeu
 void afficherCadre(void) {
-    clrscr(); // Fonction du prof
-    set_color(WHITE, BLACK);
+    clrscr(); // efface l'ecran
+    set_color(WHITE, BLACK); // couleur blanche
 
-    int largeurCadre = 60; 
+    int largeurCadre = 60; // largeur de la boite
 
     // --- Ligne du Haut ---
     gotoxy(0, 0);
@@ -35,8 +40,8 @@ void afficherCadre(void) {
 
     // --- Bords GAUCHE et DROITE ---
     for (int i = 0; i < LIGNES; i++) {
-        gotoxy(0, i + 1);              printf("|"); // Bord Gauche
-        gotoxy(largeurCadre + 1, i + 1); printf("|"); // Bord Droit
+        gotoxy(0, i + 1);                printf("|"); // mur gauche
+        gotoxy(largeurCadre + 1, i + 1); printf("|"); // mur droit
     }
 
     // --- Ligne du Bas ---
@@ -46,86 +51,103 @@ void afficherCadre(void) {
     printf("|");
 }
 
+// affiche la grille avec les emojis
 void afficherGrille(Niveau *niveau, int curseurX, int curseurY) {
-    // 1. LES FRUITS
+    // tableau des fruits (emojis)
     char *sym[] = {"  ", "🍉", "🫐", "🥝", "🍋", "🍑", ""}; 
     
-    // 2. PARCOURS
+    // on parcourt toutes les lignes
     for (int i = 0; i < LIGNES; i++) {
-        gotoxy(2, i + 1); // X=2, Y=i+1
+        gotoxy(2, i + 1); // on se place (x=2 car y'a le cadre)
         
+        // on parcourt les colonnes
         for (int j = 0; j < COLONNES; j++) {
             
             int type = niveau->grille[i][j].type;
-            if (type > NB_TYPES) type = 0;
+            if (type > NB_TYPES) type = 0; // securite
 
-            int bg = BLACK;      // Fond par défaut
+            int bg = BLACK; // fond noir par defaut
 
             // --- GESTION CURSEUR & SELECTION ---
             if (i == curseurY && j == curseurX) {
-                bg = WHITE; 
+                bg = WHITE; // curseur blanc si on est dessus
             }
             else if (niveau->grille[i][j].estSelectionne) {
-                bg = RED; 
+                bg = RED; // fond rouge si selectionné
             }
 
-            set_color(WHITE, bg);
-            printf(" %s ", sym[type]); 
+            set_color(WHITE, bg); // applique les couleurs
+            printf(" %s ", sym[type]); // affiche le fruit
         }
     }
-    set_color(WHITE, BLACK);
+    set_color(WHITE, BLACK); // remet normal
 }
 
+// affiche les infos a droite (C'EST ICI QUE J'AVAIS FAIT L'ERREUR)
 void afficherHUD(Niveau *niveau) {
-    int x = 65; // Ta position fixe
-    int y = 2;
-    int w = 40; // Largeur effacement
-    int t = tempsRestantSec(niveau);
+    int x = 65; // position a droite
+    int y = 2;  // hauteur de depart
+    int w = 40; // largeur pour effacer
+    int t = tempsRestantSec(niveau); // recupere temps
 
-    // --- Stats ---
-    nettoyerZone(y, x, w); gotoxy(x, y);
+    // --- NIVEAU ---
+    nettoyerZone(y, x, w); // efface ligne
+    gotoxy(x, y);          // va a la ligne
     printf("NIVEAU %d", niveau->numeroNiveau);
 
-    nettoyerZone(y+2, x, w); gotoxy(x, y);
+    // --- VIES ---
+    nettoyerZone(y+2, x, w); 
+    gotoxy(x, y+2); // CORRIGÉ : on descend de 2 lignes
     printf("Vies: ");
     set_color(RED, BLACK);
-    for(int i=0; i<niveau->vies; i++) printf("♥ ");
+    for(int i=0; i<niveau->vies; i++) printf("♥ "); // affiche coeurs
     set_color(WHITE, BLACK);
 
-    nettoyerZone(y+4, x, w); gotoxy(x, y);
+    // --- SCORE ---
+    nettoyerZone(y+4, x, w); 
+    gotoxy(x, y+4); // CORRIGÉ : on descend encore
     printf("Score: %d", niveau->score);
 
-    nettoyerZone(y+5, x, w); gotoxy(x, y);
+    // --- COUPS ---
+    nettoyerZone(y+5, x, w); 
+    gotoxy(x, y+5); // CORRIGÉ
     printf("Coups: %d", niveau->coupsRestants);
 
-    nettoyerZone(y+7, x, w); gotoxy(x, y);
+    // --- TEMPS ---
+    nettoyerZone(y+7, x, w); 
+    gotoxy(x, y+7); // CORRIGÉ
+    // met en rouge si moins de 30 secondes
     if (t < 30) set_color(RED, BLACK);
     else set_color(WHITE, BLACK);
     
-    printf("Temps: %02d:%02d", t/60, t%60);
+    printf("Temps: %02d:%02d", t/60, t%60); // affiche minutes:secondes
     set_color(WHITE, BLACK);
 
-    // --- Objectifs ---
-    nettoyerZone(y+9, x, w); gotoxy(x, y+9);
+    // --- OBJECTIFS ---
+    nettoyerZone(y+9, x, w); 
+    gotoxy(x, y+9);
     printf("OBJECTIFS :");
     
     int ligne = y + 10;
+    // affiche la liste des items a detruire
     for(int k=1; k<=NB_TYPES; k++) {
         if (niveau->contrat.quantiteCible[k] > 0) {
             int fait = niveau->contrat.quantiteActuelle[k];
             int total = niveau->contrat.quantiteCible[k];
             
-            nettoyerZone(ligne, x, w); gotoxy(x, ligne);
+            nettoyerZone(ligne, x, w); 
+            gotoxy(x, ligne);
             
+            // vert si fini, blanc sinon
             if (fait >= total) set_color(GREEN, BLACK);
             else set_color(WHITE, BLACK);
             
             printf("- Item %d : %d/%d", k, fait, total);
-            ligne++;
+            ligne++; // ligne suivante
         }
     }
 
-    // --- Aide ---
+    // --- AIDE (EN BAS) ---
     set_color(DARKGRAY, BLACK);
     gotoxy(2, LIGNES + 4); 
     printf("[Fleches] Bouger | [ESPACE] Selection | [S] Sauver | [X] Quitter");
@@ -137,14 +159,14 @@ void afficherHUD(Niveau *niveau) {
    ========================================================= */
 
 int afficherMenuPrincipal(void) {
-    clrscr(); 
+    clrscr(); // efface ecran
 
     int width = 80;
     int height = 25;
     
-    // --- CADRE ---
+    // --- DESSIN DU CADRE ---
     for (int i = 0; i < width; i++) {
-        set_color((i % 5) + 9, BLACK);
+        set_color((i % 5) + 9, BLACK); // couleurs arc en ciel
         gotoxy(i, 0); printf("=");
         gotoxy(i, height-1); printf("=");
     }
@@ -154,9 +176,9 @@ int afficherMenuPrincipal(void) {
         gotoxy(width-1, i); printf("|");
     }
 
-    // --- TITRE ---
+    // --- TITRE ASCII ART ---
     int y = 3;
-    int x_titre = (width - 44) / 2; 
+    int x_titre = (width - 44) / 2; // centrage
 
     set_color(MAGENTA, BLACK);
     gotoxy(x_titre, y++); printf("  ______   ______   ______ ");
@@ -177,7 +199,7 @@ int afficherMenuPrincipal(void) {
     gotoxy(x_titre, y++); printf("| |  | || |____ | | \\ \\ | |__| || |____  ____) |");
     gotoxy(x_titre, y++); printf("|_|  |_||______||_|  \\_\\ \\____/ |______| |_____/ ");
 
-    // --- MENU ---
+    // --- BOITE DU MENU ---
     y += 3; 
     int x_menu = (width - 30) / 2; 
 
@@ -191,7 +213,7 @@ int afficherMenuPrincipal(void) {
     set_color(DARKGRAY, BLACK);       printf("    |");
     y++;
 
-    // Séparateur
+    // Ligne vide
     gotoxy(x_menu, y++); printf("|   --------------------   |");
 
     // Option 2
@@ -200,7 +222,7 @@ int afficherMenuPrincipal(void) {
     set_color(DARKGRAY, BLACK);       printf("     |");
     y++;
 
-    // Séparateur
+    // Ligne vide
     gotoxy(x_menu, y++); printf("|   --------------------   |");
      
     // Option 3
@@ -209,7 +231,7 @@ int afficherMenuPrincipal(void) {
     set_color(DARKGRAY, BLACK);       printf("            |");
     y++;
 
-    // Séparateur
+    // Ligne vide
     gotoxy(x_menu, y++); printf("|   --------------------   |");
 
     // Option 4
@@ -220,21 +242,22 @@ int afficherMenuPrincipal(void) {
 
     gotoxy(x_menu, y++); printf("|__________________________|");
 
-    // --- FOOTER ---
+    // --- CREDITS EN BAS ---
     set_color(WHITE, BLACK);
     gotoxy((width - 25) / 2, height - 3);
     printf("Projet C - ECE Paris 2025");
 
-    // --- INPUT ---
+    // --- ZONE DE SAISIE ---
     gotoxy(x_menu + 5, y + 1);
     set_color(MAGENTA, BLACK);
     printf("Votre choix > ");
     set_color(WHITE, BLACK);
 
     char choix;
+    // boucle pour forcer 1, 2, 3 ou 4
     do {
         choix = _getch();
     } while (choix < '1' || choix > '4');
 
-    return choix - '0';
+    return choix - '0'; // convertit char en int
 }
