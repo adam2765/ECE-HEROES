@@ -1,5 +1,5 @@
-#include <stdio.h>                 // Pour afficher si on en a besoin
-#include <stdlib.h>                // Pour le hasard avec rand()
+#include <stdio.h>                 
+#include <stdlib.h>                
 #include <time.h>                  // Pour récupérer l'heure
 #include "jeu.h"                   // Nos structures et constantes
 
@@ -383,3 +383,4 @@ int verifierContrat(Niveau *niveau) {                           // Vérifie si l
     }
     return 1;                                                   // Sinon, c'est bon -> victoire !
 }
+
