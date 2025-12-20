@@ -46,4 +46,5 @@ void gererCombos(Niveau *niveau);
 // Retourne 1 si victoire, 0 sinon
 int verifierContrat(Niveau *niveau);
 
+
 #endif
