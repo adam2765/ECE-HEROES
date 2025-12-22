@@ -155,7 +155,7 @@ for(int k=1; k<=NB_TYPES; k++) {
     printf("[Fleches] Bouger | [ESPACE] Selection | [S] Sauver | [X] Quitter");
     set_color(WHITE, BLACK); // retour au blanc
 }
-}
+
 
 /* =========================================================
    PARTIE MENU
